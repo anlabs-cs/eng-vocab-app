@@ -45,7 +45,7 @@ function renderDetail(){
       ${s.terms.length>0 ? `
         <div class="mastery-bar-wrap">
           <div class="mastery-bar-head">
-            <span>${ms.mastered}/${ms.total} từ đã thuộc</span>
+            <span>${ms.mastered}/${ms.total}</span>
             <span>${ms.pct}%</span>
           </div>
           <div class="progress-track" style="margin:0;"><div class="progress-fill" style="width:${ms.pct}%; background:var(--green);"></div></div>
@@ -80,7 +80,7 @@ function renderDetail(){
         <div class="term-section">
           <div class="term-list-header sticky-bar">
             <h3>Terms in this set (${s.terms.length})</h3>
-            <button class="btn-ghost" onclick="toggleHideDefinitions()">${hideDefinitions?'👁️ Hiện đáp án':'🙈 Ẩn đáp án'}</button>
+            <button class="btn-ghost" onclick="toggleHideDefinitions()">${hideDefinitions?'Show definitions':'Hide definitions'}</button>
           </div>
           ${s.terms.map(t=>termRowHtml(t)).join('')}
         </div>
@@ -222,7 +222,7 @@ function termRowHtml(t){
         <button class="icon-btn round-btn small" title="Sửa" onclick="startInlineEdit('${t.id}')">✏️</button>
       </div>
       <div class="term-row-content">
-        <div class="t">${escapeHtml(t.term)} ${t.mastered?'<span class="mastered-tag">✓ đã thuộc</span>':''}</div>
+        <div class="t">${escapeHtml(t.term)} ${t.mastered?'<span class="mastered-tag">✓ Know</span>':''}</div>
         <div class="sep"></div>
         <div class="d ${hideDefinitions?'hidden-def':''}">${escapeHtml(t.definition)}</div>
       </div>

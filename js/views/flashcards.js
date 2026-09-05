@@ -4,7 +4,8 @@
 function renderFlashcards(){
   const s = getSet(currentSetId);
   if(!session.order){
-    session.order = shuffle(s.terms.map(t=>t.id));
+    session.shuffleOn = false;
+    session.order = s.terms.map(t=>t.id);
     session.idx = 0;
     session.flipped = false;
     session.known = new Set();
@@ -20,7 +21,7 @@ function renderFlashcards(){
         <div class="left">Flashcards</div>
         <div class="center"><span>${session.idx+1} / ${session.order.length}</span><span class="setname">${escapeHtml(s.title)}</span></div>
         <div class="right">
-          <button class="icon-btn" title="Trộn thẻ" onclick="fcShuffle()">🔀</button>
+          <button class="icon-btn ${session.shuffleOn?'active':''}" title="${session.shuffleOn?'Trộn thẻ: Đang bật':'Trộn thẻ: Đang tắt'}" onclick="fcShuffle()">${session.shuffleOn?'🔀':'↔️'}</button>
           <button class="icon-btn" title="Tùy chọn" onclick="fcOpenOptions()">⚙️</button>
           <button class="icon-btn" title="Đóng" onclick="go('detail')">✕</button>
         </div>
@@ -64,7 +65,8 @@ function fcOptionsModalHtml(){
         <button class="modal-close" onclick="fcCloseOptions()">✕</button>
         <h2>Tùy chọn</h2>
         <div class="modal-row" style="cursor:pointer;" onclick="fcShuffle()">
-          <span>🔀 Trộn thẻ</span>
+          <span>${session.shuffleOn?'🔀':'↔️'} Trộn thẻ</span>
+          <span class="switch ${session.shuffleOn?'on':''}"><span class="knob"></span></span>
         </div>
         <div class="modal-row" style="cursor:pointer;" onclick="fcRestart()">
           <span>↻ Học lại từ đầu</span>
@@ -82,8 +84,11 @@ function fcCloseOptions(){ session.optionsOpen = false; renderFlashcards(); }
 function fcFlip(){ session.flipped = !session.flipped; renderFlashcards(); }
 function fcShuffle(){
   const s = getSet(currentSetId);
-  session.order = shuffle(s.terms.map(t=>t.id));
-  session.idx = 0; session.flipped = false; session.optionsOpen = false;
+  session.shuffleOn = !session.shuffleOn;
+  session.order = session.shuffleOn
+    ? shuffle(s.terms.map(t=>t.id))
+    : s.terms.map(t=>t.id);
+  session.idx = 0; session.flipped = false;
   renderFlashcards();
 }
 function fcRestart(){
