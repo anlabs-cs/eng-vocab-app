@@ -7,6 +7,14 @@ document.addEventListener('keydown', (e)=>{
     else if(e.key==='1'){ fcMark(false); }
     else if(e.key==='2' || e.key==='3'){ fcMark(true); }
   }
+  else if(view==='detail'){
+    const s = getSet(currentSetId);
+    if(s && s.terms.length>0 && document.activeElement.tagName!=='INPUT'){
+      if(e.code==='Space'){ e.preventDefault(); togglePreviewFlip(); }
+      else if(e.key==='ArrowRight'){ previewNext(); }
+      else if(e.key==='ArrowLeft'){ previewPrev(); }
+    }
+  }
 });
 
 /* =========================================================

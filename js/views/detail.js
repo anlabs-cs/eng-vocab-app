@@ -2,11 +2,20 @@
    DETAIL VIEW
 ========================================================= */
 let detailMenuOpen = false;
+let hideDefinitions = false;
+let editingTermId = null;
+let previewIndex = 0;
+let previewFlipped = false;
+let previewSetId = null;
 
 function renderDetail(){
   const s = getSet(currentSetId);
   if(!s){ go('home'); return; }
-  const firstTerm = s.terms[0];
+  if(previewSetId !== s.id){
+    previewSetId = s.id;
+    previewIndex = 0;
+    previewFlipped = false;
+  }
   const ms = setMasteryStats(s);
 
   root.innerHTML = `
@@ -51,26 +60,30 @@ function renderDetail(){
       ` : `
 
         <div class="preview-card">
-          <div class="preview-hint" onclick="go('flashcards')" style="cursor:pointer;">
-            <span>💡 Nhấn để xem trước</span>
+          <div class="preview-hint">
+            <span>💡 Get a hint</span>
+            <span onclick="event.stopPropagation(); speak('${escapeAttr(previewFlipped?(s.terms[previewIndex].definition||''):s.terms[previewIndex].term)}', '${previewFlipped?'vi-VN':'en-US'}')" title="Đọc to">🔊</span>
           </div>
-          <div class="preview-face" onclick="go('flashcards')">${escapeHtml(firstTerm.term)}</div>
-          <div class="preview-footer"><span>⌨️</span> Press <kbd>Space</kbd> or click on the card to flip </div>
+          <div class="preview-face ${previewFlipped?'def':''}" onclick="togglePreviewFlip()">${previewFlipped ? escapeHtml(s.terms[previewIndex].definition||'(no definition)') : escapeHtml(s.terms[previewIndex].term)}</div>
+          <div class="preview-footer"><span>⌨️</span> Press <kbd>Space</kbd> or click on the card to flip</div>
+          <div class="preview-nav">
+            <button class="fc-nav" title="Previous" onclick="previewPrev()">‹</button>
+            <span class="preview-count">${previewIndex+1} / ${s.terms.length}</span>
+            <button class="fc-nav" title="Next" onclick="previewNext()">›</button>
+          </div>
         </div>
         <div class="mode-tabs">
           <div class="mode-tab" onclick="go('flashcards')"><span class="ic"></span> Flashcards</div>
           <div class="mode-tab" onclick="go('learn')"><span class="ic"></span> Learn</div>
           <div class="mode-tab" onclick="go('test-setup')"><span class="ic"></span> Test</div>
         </div>
-        <div class="term-list-header">
-          <h3>Terms in this set (${s.terms.length})</h3>
-        </div>
-        ${s.terms.map(t=>`
-          <div class="term-row">
-            <div class="t">${escapeHtml(t.term)} ${t.mastered?'<span class=\"mastered-tag\">✓ đã thuộc</span>':''}</div>
-            <div class="d">${escapeHtml(t.definition)}</div>
+        <div class="term-section">
+          <div class="term-list-header sticky-bar">
+            <h3>Terms in this set (${s.terms.length})</h3>
+            <button class="btn-ghost" onclick="toggleHideDefinitions()">${hideDefinitions?'👁️ Hiện đáp án':'🙈 Ẩn đáp án'}</button>
           </div>
-        `).join('')}
+          ${s.terms.map(t=>termRowHtml(t)).join('')}
+        </div>
       `}
     </div>
   `;
@@ -172,4 +185,94 @@ function deleteSetFromDetail(id){
   SETS = SETS.filter(s=>s.id!==id);
   saveSets(SETS);
   go('home');
+}
+
+function togglePreviewFlip(){ previewFlipped = !previewFlipped; renderDetail(); }
+function previewNext(){
+  const s = getSet(currentSetId);
+  if(!s) return;
+  if(previewIndex < s.terms.length-1){ previewIndex++; previewFlipped=false; renderDetail(); }
+}
+function previewPrev(){
+  if(previewIndex>0){ previewIndex--; previewFlipped=false; renderDetail(); }
+}
+
+/* ---------- Per-term row: star / listen / inline edit / hide definitions ---------- */
+
+function termRowHtml(t){
+  if(editingTermId === t.id){
+    return `
+      <div class="term-row editing" data-term-id="${t.id}">
+        <div class="term-row-content">
+          <input type="text" class="term-edit-input" id="editTermInput_${t.id}" value="${escapeAttr(t.term)}" placeholder="Thuật ngữ">
+          <input type="text" class="term-edit-input" id="editDefInput_${t.id}" value="${escapeAttr(t.definition)}" placeholder="Định nghĩa">
+        </div>
+        <div class="term-row-icons">
+          <button class="icon-btn round-btn small" title="Lưu" onclick="saveInlineEdit('${t.id}')">✔️</button>
+          <button class="icon-btn round-btn small" title="Hủy" onclick="cancelInlineEdit()">✕</button>
+        </div>
+      </div>
+    `;
+  }
+  return `
+    <div class="term-row">
+      <div class="term-row-icons">
+        <button class="icon-btn round-btn small" title="${t.starred?'Bỏ đánh dấu':'Đánh dấu quan trọng'}" onclick="toggleStarTerm('${t.id}')">${t.starred?'⭐':'☆'}</button>
+        <button class="icon-btn round-btn small" title="Đọc to" onclick="speak('${escapeAttr(t.term)}','en-US')">🔊</button>
+        <button class="icon-btn round-btn small" title="Sửa" onclick="startInlineEdit('${t.id}')">✏️</button>
+      </div>
+      <div class="term-row-content">
+        <div class="t">${escapeHtml(t.term)} ${t.mastered?'<span class="mastered-tag">✓ đã thuộc</span>':''}</div>
+        <div class="sep"></div>
+        <div class="d ${hideDefinitions?'hidden-def':''}">${escapeHtml(t.definition)}</div>
+      </div>
+    </div>
+  `;
+}
+
+function toggleStarTerm(termId){
+  const s = getSet(currentSetId);
+  if(!s) return;
+  const t = s.terms.find(x=>x.id===termId);
+  if(!t) return;
+  t.starred = !t.starred;
+  saveSets(SETS);
+  renderDetail();
+}
+
+function startInlineEdit(termId){
+  editingTermId = termId;
+  renderDetail();
+  const el = document.getElementById('editTermInput_'+termId);
+  if(el) el.focus();
+}
+
+function cancelInlineEdit(){
+  editingTermId = null;
+  renderDetail();
+}
+
+function saveInlineEdit(termId){
+  const s = getSet(currentSetId);
+  if(!s) return;
+  const t = s.terms.find(x=>x.id===termId);
+  if(!t) return;
+  const termEl = document.getElementById('editTermInput_'+termId);
+  const defEl = document.getElementById('editDefInput_'+termId);
+  const newTerm = (termEl ? termEl.value : t.term).trim();
+  const newDef = (defEl ? defEl.value : t.definition).trim();
+  if(!newTerm){
+    alert('Thuật ngữ không được để trống.');
+    return;
+  }
+  t.term = newTerm;
+  t.definition = newDef;
+  saveSets(SETS);
+  editingTermId = null;
+  renderDetail();
+}
+
+function toggleHideDefinitions(){
+  hideDefinitions = !hideDefinitions;
+  renderDetail();
 }
