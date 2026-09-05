@@ -2,7 +2,7 @@
 
 Ứng dụng học từ vựng tiếng Anh chạy hoàn toàn trên trình duyệt (không cần backend/server). Tạo bộ từ, học bằng flashcard, chế độ học (learn) và làm bài kiểm tra, theo dõi tiến độ và streak học tập.
 
-Trải nghiệm trực tiếp tại đây: [Quizlet](https://doan23092008-cell.github.io/eng-vocab-app/)
+Trải nghiệm trực tiếp tại đây: [Quizlet](https://anlabs-cs.github.io/eng-vocab-app/)
 
 ## Tính năng
 
@@ -48,21 +48,9 @@ Mở file index.html bằng trình duyệt (double click hoặc kéo file vào c
 
 Lưu ý: một số trình duyệt giới hạn tính năng khi mở file trực tiếp (file://). Nếu gặp lỗi, hãy dùng Cách 2.
 
-### Cách 2: Dùng local server (khuyến nghị)
+### Cách 2: Dùng bản deploy trên GitHub Pages
 
-```bash
-# Dùng Python
-python3 -m http.server 8000
-
-# Hoặc dùng Node.js (http-server)
-npx http-server -p 8000
-```
-
-Sau đó mở trình duyệt tại http://localhost:8000.
-
-### Cách 3: Dùng bản deploy trên GitHub Pages
-
-Truy cập trực tiếp: [Quizlet](https://doan23092008-cell.github.io/eng-vocab-app/)
+Truy cập trực tiếp: [Quizlet](https://anlabs-cs.github.io/eng-vocab-app/)
 
 ## Lưu trữ dữ liệu
 
