@@ -1,37 +1,40 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" type="image/png" href="https://raw.githubusercontent.com/doan23092008-cell/eng-vocab-app/main/Globe.png">
-<title>Quizlet</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="./img/Globe.png">
+    <title>Quizlet</title>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="./font/font-times-new-roman.ttf">
+    <link rel="preconnect" href="./font/font-times-new-roman.ttf" crossorigin>
+    <link href="./font/font-times-new-roman.ttf" rel="stylesheet">
 
-<link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-<div id="app"></div>
+    <div id="app"></div>
 
-<!-- Core: dữ liệu, lưu file, tiến độ/streak, TTS, hàm dùng chung -->
-<script src="js/state.js"></script>
-<script src="js/filesync.js"></script>
-<script src="js/progress.js"></script>
-<script src="js/helpers.js"></script>
+    <!-- Core: dữ liệu, lưu file, tiến độ/streak, TTS, hàm dùng chung -->
+    <script src="js/state.js"></script>
+    <script src="js/filesync.js"></script>
+    <script src="js/progress.js"></script>
+    <script src="js/helpers.js"></script>
 
-<!-- Views: mỗi màn hình 1 file -->
-<script src="js/views/home.js"></script>
-<script src="js/views/detail.js"></script>
-<script src="js/views/editor.js"></script>
-<script src="js/views/flashcards.js"></script>
-<script src="js/views/learn.js"></script>
-<script src="js/views/test.js"></script>
-<script src="js/views/results.js"></script>
+    <!-- Views: mỗi màn hình 1 file -->
+    <script src="js/views/home.js"></script>
+    <script src="js/views/detail.js"></script>
+    <script src="js/views/editor.js"></script>
+    <script src="js/views/flashcards.js"></script>
+    <script src="js/views/learn.js"></script>
+    <script src="js/views/test.js"></script>
+    <script src="js/views/results.js"></script>
 
-<!-- Khởi động app (phải load sau cùng) -->
-<script src="js/main.js"></script>
+    <!-- Khởi động app (phải load sau cùng) -->
+    <script src="js/main.js"></script>
 </body>
+
 </html>
