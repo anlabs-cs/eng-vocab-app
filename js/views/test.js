@@ -67,8 +67,9 @@ function renderTestSetup(){
             <div class="modal-row">
               <span>Answer with</span>
               <select class="select-input" onchange="setTestOpt('answerWith', this.value)">
-                <option value="definition" ${cfg.answerWith==='definition'?'selected':''}>Definition</option>
-                <option value="term" ${cfg.answerWith==='term'?'selected':''}>Term</option>
+                <option value="definition" ${cfg.answerWith==='definition'?'selected':''}>Definition (Tiếng Việt)</option>
+                <option value="term" ${cfg.answerWith==='term'?'selected':''}>Term (Tiếng Anh)</option>
+                <option value="both" ${cfg.answerWith==='both'?'selected':''}>Trộn cả hai (Anh & Việt)</option>
               </select>
             </div>
             <div class="modal-row">
@@ -165,7 +166,9 @@ function startTest(){
 }
 
 function buildTestQuestion(type, term, s, cfg){
-  const answerWithTerm = cfg.answerWith === 'term';
+  const answerWithTerm = cfg.answerWith === 'both'
+    ? Math.random() < 0.5
+    : cfg.answerWith === 'term';
   if(type==='tf'){
     const isTrue = Math.random() < 0.5;
     let shownDef = answerWithTerm ? term.term : term.definition;
@@ -195,6 +198,8 @@ function buildMatchingQuestion(terms, cfg){
 function renderTest(){
   const s = getSet(currentSetId);
   const qs = session.testQuestions;
+  const prevScrollEl = root.querySelector('.study-body');
+  const prevScrollTop = prevScrollEl ? prevScrollEl.scrollTop : 0;
 
   const qHtml = qs.map((q,i)=>{
     let body='';
@@ -246,6 +251,8 @@ function renderTest(){
       </div>
     </div>
   `;
+  const newScrollEl = root.querySelector('.study-body');
+  if(newScrollEl) newScrollEl.scrollTop = prevScrollTop;
 }
 
 function renderMatchingBody(q, qi){

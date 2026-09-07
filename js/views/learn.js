@@ -40,7 +40,9 @@ function learnNormalize(str, lenient){
 function buildLearnQuestion(s, termId){
   const term = s.terms.find(t=>t.id===termId);
   const settings = session.settings || defaultLearnSettings();
-  const answerWithTerm = settings.answerWith === 'term';
+  const answerWithTerm = settings.answerWith === 'both'
+    ? Math.random() < 0.5
+    : settings.answerWith === 'term';
   const field = answerWithTerm ? 'term' : 'definition';
   const pool = s.terms.filter(t=>t.id!==termId);
   const wrongCount = Math.min(3, pool.length);
@@ -115,8 +117,8 @@ function renderLearn(){
     </div>`;
   } else {
     bodyHtml = `
-      <input type="text" class="written-input" id="writtenInput" placeholder="${q.answerWithTerm?'Type the term...':'Type the definition...'}" ${session.answered?'disabled':''}
-        onkeydown="if(event.key==='Enter') learnSubmitWritten()">
+      <input type="text" class="written-input" id="writtenInput" placeholder="${q.answerWithTerm?'Type the term...':'Type the definition...'}" value="${escapeAttr(session.answered ? (session.selected||'') : '')}" ${session.answered?'readonly':''}
+        onkeydown="if(event.key==='Enter'){ if(session.answered){ learnNext(); } else { learnSubmitWritten(); } }">
       <div style="margin-top:14px; text-align:right;">
         ${!session.answered ? `<button class="btn-primary" onclick="learnSubmitWritten()">Check</button>` : ''}
       </div>
@@ -223,8 +225,9 @@ function learnSettingsModalHtml(){
             <div class="modal-row">
               <span>Show</span>
               <select class="select-input" onchange="learnDraftSet('answerWith', this.value)">
-                <option value="definition" ${draft.answerWith==='definition'?'selected':''}>Term → Definition</option>
-                <option value="term" ${draft.answerWith==='term'?'selected':''}>Definition → Term</option>
+                <option value="definition" ${draft.answerWith==='definition'?'selected':''}>Term → Definition (Tiếng Việt)</option>
+                <option value="term" ${draft.answerWith==='term'?'selected':''}>Definition → Term (Tiếng Anh)</option>
+                <option value="both" ${draft.answerWith==='both'?'selected':''}>Trộn cả hai (Anh & Việt)</option>
               </select>
             </div>
           </div>
