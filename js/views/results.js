@@ -33,7 +33,32 @@ function renderResults(){
     retryFn = "go('test-setup')";
     reviewHtml = `
       <div class="term-list-header"><h3>Chi tiết bài làm</h3></div>
-      ${session.questions.map((q,i)=>`
+      ${session.questions.map((q,i)=>{
+        if(q.type==='matching'){
+          const rows = q.terms.map(t=>{
+            const userDefId = q.matches[t.id];
+            const userDef = q.right.find(r=>r.id===userDefId);
+            const rowCorrect = userDefId === t.id;
+            return `
+              <div style="margin-top:6px; padding-top:6px; border-top:1px dashed var(--border);">
+                <span style="color:var(--text);">${escapeHtml(t.term)}</span>
+                <span style="color:var(--text-dim);"> → </span>
+                <span style="color:${rowCorrect?'var(--green)':'var(--red)'};">${escapeHtml(userDef ? userDef.text : '(chưa nối)')}</span>
+                ${!rowCorrect ? `<div style="color:var(--text-dim);">Đáp án đúng: <strong style="color:var(--text);">${escapeHtml(t.definition)}</strong></div>` : ''}
+              </div>
+            `;
+          }).join('');
+          return `
+            <div class="test-q">
+              <div class="qn">Câu ${i+1}
+                <span class="review-tag ${q.isCorrect?'correct':'wrong'}">${q.isCorrect?'Đúng':'Sai'}</span>
+              </div>
+              <div class="qterm">Matching</div>
+              ${rows}
+            </div>
+          `;
+        }
+        return `
         <div class="test-q">
           <div class="qn">Câu ${i+1}
             <span class="review-tag ${q.isCorrect?'correct':'wrong'}">${q.isCorrect?'Đúng':'Sai'}</span>
@@ -41,7 +66,8 @@ function renderResults(){
           <div class="qterm">${escapeHtml(q.term.term)}</div>
           <div style="color:var(--text-dim);">Đáp án đúng: <strong style="color:var(--text);">${escapeHtml(q.term.definition)}</strong></div>
         </div>
-      `).join('')}
+      `;
+      }).join('')}
     `;
   }
 

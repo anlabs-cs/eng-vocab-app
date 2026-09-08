@@ -145,18 +145,18 @@ function startTest(){
 
   const chosenTerms = shuffle(basePool).slice(0, cfg.count);
 
-  // Matching is handled as a single question block covering all chosen terms if selected
+  // Matching luôn được thêm thành 1 khối câu hỏi riêng (nếu được bật),
+  // và có thể xuất hiện cùng với các loại câu hỏi khác.
   const nonMatchingTypes = types.filter(t=>t!=='matching');
   const questions = [];
 
-  if(types.includes('matching') && nonMatchingTypes.length===0){
-    // Pure matching test: one matching question with all chosen terms (capped at 8 pairs for usability)
+  if(types.includes('matching')){
     const matchTerms = chosenTerms.slice(0, Math.min(8, chosenTerms.length));
     questions.push(buildMatchingQuestion(matchTerms, cfg));
-  } else {
+  }
+  if(nonMatchingTypes.length>0){
     chosenTerms.forEach(term=>{
-      const pickFrom = nonMatchingTypes.length ? nonMatchingTypes : ['mc'];
-      const type = pickFrom[Math.floor(Math.random()*pickFrom.length)];
+      const type = nonMatchingTypes[Math.floor(Math.random()*nonMatchingTypes.length)];
       questions.push(buildTestQuestion(type, term, s, cfg));
     });
   }
@@ -190,9 +190,8 @@ function buildTestQuestion(type, term, s, cfg){
 }
 
 function buildMatchingQuestion(terms, cfg){
-  const left = terms.map(t=>({id:t.id, text:t.term}));
   const right = shuffle(terms.map(t=>({id:t.id, text:t.definition})));
-  return { type:'matching', terms, left, right, matches:{}, selectedLeft:null };
+  return { type:'matching', terms, right, matches:{}, selectedRight:null };
 }
 
 function renderTest(){
@@ -256,40 +255,86 @@ function renderTest(){
 }
 
 function renderMatchingBody(q, qi){
-  return `
-    <div class="matching-grid">
-      <div class="matching-col">
-        ${q.left.map(l=>`
-          <button class="matching-item ${q.selectedLeft===l.id?'sel':''} ${q.matches[l.id]?'matched':''}"
-            onclick="matchSelectLeft(${qi}, '${l.id}')" ${q.matches[l.id]?'disabled':''}>
-            ${escapeHtml(l.text)}
-          </button>
-        `).join('')}
+  const usedRightIds = new Set(Object.values(q.matches));
+  const bankItems = q.right.filter(r=>!usedRightIds.has(r.id));
+
+  const rows = q.terms.map(t=>{
+    const rightId = q.matches[t.id];
+    const rightItem = rightId ? q.right.find(r=>r.id===rightId) : null;
+    return `
+      <div class="matching-row">
+        <div class="matching-fixed">${escapeHtml(t.term)}</div>
+        <div class="matching-drop ${rightItem?'filled':''}"
+          ondragover="matchZoneDragOver(event)"
+          ondragleave="matchZoneDragLeave(event)"
+          ondrop="matchZoneDrop(event, ${qi}, '${t.id}')"
+          onclick="matchZoneClick(${qi}, '${t.id}')">
+          <span>${rightItem ? escapeHtml(rightItem.text) : 'Kéo đáp án vào đây'}</span>
+          ${rightItem ? `<span class="remove-x" onclick="event.stopPropagation(); matchRemove(${qi}, '${t.id}')">×</span>` : ''}
+        </div>
       </div>
-      <div class="matching-col">
-        ${q.right.map(r=>{
-          const takenBy = Object.keys(q.matches).find(k=>q.matches[k]===r.id);
-          return `
-          <button class="matching-item ${takenBy?'matched':''}"
-            onclick="matchSelectRight(${qi}, '${r.id}')" ${takenBy?'disabled':''}>
-            ${escapeHtml(r.text)}
-          </button>
-        `;}).join('')}
-      </div>
+    `;
+  }).join('');
+
+  const bankHtml = bankItems.map(r=>`
+    <div class="matching-chip ${q.selectedRight===r.id?'picked':''}"
+      draggable="true"
+      ondragstart="matchChipDragStart(event, ${qi}, '${r.id}')"
+      ondragend="matchChipDragEnd(event)"
+      onclick="matchChipClick(${qi}, '${r.id}')">
+      ${escapeHtml(r.text)}
     </div>
+  `).join('');
+
+  return `
+    <div class="matching-rows">${rows}</div>
+    <div class="matching-bank-label"></div>
+    <div class="matching-bank">${bankHtml || '<span style="color:var(--text-dim);">Đã ghép hết</span>'}</div>
   `;
 }
 
-function matchSelectLeft(qi, leftId){
+function matchZoneDragOver(e){ e.preventDefault(); e.currentTarget.classList.add('over'); }
+function matchZoneDragLeave(e){ e.currentTarget.classList.remove('over'); }
+
+function matchZoneDrop(e, qi, leftId){
+  e.preventDefault();
+  e.currentTarget.classList.remove('over');
+  const rightId = e.dataTransfer.getData('text/plain');
+  if(!rightId) return;
+  assignMatch(qi, leftId, rightId);
+}
+
+function matchChipDragStart(e, qi, rightId){
+  e.dataTransfer.setData('text/plain', rightId);
+  e.dataTransfer.effectAllowed = 'move';
+  e.currentTarget.classList.add('dragging');
+}
+function matchChipDragEnd(e){ e.currentTarget.classList.remove('dragging'); }
+
+// Fallback chạm/click cho thiết bị không hỗ trợ kéo thả tốt (điện thoại)
+function matchChipClick(qi, rightId){
   const q = session.testQuestions[qi];
-  q.selectedLeft = leftId;
+  q.selectedRight = (q.selectedRight === rightId) ? null : rightId;
   renderTest();
 }
-function matchSelectRight(qi, rightId){
+function matchZoneClick(qi, leftId){
   const q = session.testQuestions[qi];
-  if(!q.selectedLeft) return;
-  q.matches[q.selectedLeft] = rightId;
-  q.selectedLeft = null;
+  if(q.matches[leftId]) return; // ô đã điền: dùng nút × để xóa
+  if(q.selectedRight){
+    assignMatch(qi, leftId, q.selectedRight);
+    q.selectedRight = null;
+  }
+}
+
+function assignMatch(qi, leftId, rightId){
+  const q = session.testQuestions[qi];
+  q.matches[leftId] = rightId;
+  q.selectedRight = null;
+  renderTest();
+}
+function matchRemove(qi, leftId){
+  const q = session.testQuestions[qi];
+  delete q.matches[leftId];
   renderTest();
 }
 
