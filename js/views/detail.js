@@ -25,7 +25,7 @@ function renderDetail(){
       <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
         <h1 class="set-title" style="margin-bottom:14px;">${escapeHtml(s.title)}</h1>
         <div class="icon-btn-row">
-          <button class="icon-btn round-btn" title="${s.starred?'Unsave':'Save set'}" onclick="toggleStarSet('${s.id}')">${s.starred?'<img src="img/star2.png" class="theme-icon">':'<img src="img/star1.png" class="theme-icon">'}</button>
+          <button class="icon-btn round-btn" title="${s.starred?'Unsave':'Save set'}" onclick="toggleStarSet('${s.id}')">${s.starred?'<img src="img/star2.png" class="theme-icon theme-icon-color">':'<img src="img/star1.png" class="theme-icon">'}</button>
           <button class="icon-btn round-btn" title="Share" onclick="shareSet('${s.id}')"><img src="img/share-2.png" class="theme-icon"></button>
           <div style="position:relative;">
             <button class="icon-btn round-btn" title="More" onclick="toggleDetailMenu(event)"><img src="img/menu.png" class="theme-icon"></button>
@@ -216,7 +216,7 @@ function termRowHtml(t){
   return `
     <div class="term-row">
       <div class="term-row-icons">
-        <button class="icon-btn round-btn small" title="${t.starred?'Unstar':'Star as important'}" onclick="toggleStarTerm('${t.id}')">${t.starred?'<img src="img/star2.png" class="theme-icon">':'<img src="img/star1.png" class="theme-icon">'}</button>
+        <button class="icon-btn round-btn small" title="${t.starred?'Unstar':'Star as important'}" onclick="toggleStarTerm('${t.id}')">${t.starred?'<img src="img/star2.png" class="theme-icon theme-icon-color">':'<img src="img/star1.png" class="theme-icon">'}</button>
         <button class="icon-btn round-btn small" title="Read aloud" onclick="speak('${escapeAttr(t.term)}','en-US')"><img src="img/volume-2.png" class="theme-icon"></button>
         <button class="icon-btn round-btn small" title="Edit" onclick="startInlineEdit('${t.id}')"><img src="img/pencil.png" class="theme-icon"></button>
       </div>

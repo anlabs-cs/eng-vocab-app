@@ -52,6 +52,15 @@
   vertical-align: middle;
 }
 
+/* Light theme: most icons in img/ are plain white PNGs (fine on the
+   dark background) — invert them to a dark color so they stay visible
+   on the light theme's light background. Icons that already carry
+   their own color (like moon.png) get the "theme-icon-color" class
+   instead, so they're skipped and keep their original color. */
+:root[data-theme="light"] .theme-icon:not(.theme-icon-color) {
+  filter: invert(1) brightness(0.2);
+}
+
 * {
   box-sizing: border-box;
 }
