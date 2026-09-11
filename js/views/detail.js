@@ -25,17 +25,17 @@ function renderDetail(){
       <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
         <h1 class="set-title" style="margin-bottom:14px;">${escapeHtml(s.title)}</h1>
         <div class="icon-btn-row">
-          <button class="icon-btn round-btn" title="${s.starred?'Bỏ lưu':'Lưu bộ từ'}" onclick="toggleStarSet('${s.id}')">${s.starred?'⭐':'☆'}</button>
-          <button class="icon-btn round-btn" title="Chia sẻ" onclick="shareSet('${s.id}')">🔗</button>
+          <button class="icon-btn round-btn" title="${s.starred?'Unsave':'Save set'}" onclick="toggleStarSet('${s.id}')">${s.starred?'⭐':'☆'}</button>
+          <button class="icon-btn round-btn" title="Share" onclick="shareSet('${s.id}')">🔗</button>
           <div style="position:relative;">
-            <button class="icon-btn round-btn" title="Thêm" onclick="toggleDetailMenu(event)">⋯</button>
+            <button class="icon-btn round-btn" title="More" onclick="toggleDetailMenu(event)">⋯</button>
             ${detailMenuOpen ? `
               <div class="dropdown-menu" onclick="event.stopPropagation()">
-                <button onclick="closeDetailMenu(); go('editor')"><span>Sửa bộ từ</span></button>
-                <button onclick="closeDetailMenu(); duplicateSet('${s.id}')"><span>Nhân bản</span></button>
-                <button onclick="closeDetailMenu(); printSet('${s.id}')"><span>In</span></button>
-                <button onclick="closeDetailMenu(); exportSetJson('${s.id}')">⬇<span>Xuất file .json</span></button>
-                <button class="danger" onclick="closeDetailMenu(); deleteSetFromDetail('${s.id}')"><span>Xóa</span></button>
+                <button onclick="closeDetailMenu(); go('editor')"><span>Edit set</span></button>
+                <button onclick="closeDetailMenu(); duplicateSet('${s.id}')"><span>Duplicate</span></button>
+                <button onclick="closeDetailMenu(); printSet('${s.id}')"><span>Print</span></button>
+                <button onclick="closeDetailMenu(); exportSetJson('${s.id}')">⬇<span>Export .json</span></button>
+                <button class="danger" onclick="closeDetailMenu(); deleteSetFromDetail('${s.id}')"><span>Delete</span></button>
               </div>
             ` : ''}
           </div>
@@ -54,15 +54,15 @@ function renderDetail(){
 
       ${s.terms.length===0 ? `
         <div class="empty-state">
-          <div class="big">Bộ từ này chưa có thuật ngữ nào</div>
-          <div style="margin-top:16px;"><button class="btn-primary" onclick="go('editor')">Thêm thuật ngữ</button></div>
+          <div class="big">This set has no terms yet</div>
+          <div style="margin-top:16px;"><button class="btn-primary" onclick="go('editor')">Add terms</button></div>
         </div>
       ` : `
 
         <div class="preview-card">
           <div class="preview-hint">
             <span>💡 Get a hint</span>
-            <span onclick="event.stopPropagation(); speak('${escapeAttr(previewFlipped?(s.terms[previewIndex].definition||''):s.terms[previewIndex].term)}', '${previewFlipped?'vi-VN':'en-US'}')" title="Đọc to">🔊</span>
+            <span onclick="event.stopPropagation(); speak('${escapeAttr(previewFlipped?(s.terms[previewIndex].definition||''):s.terms[previewIndex].term)}', '${previewFlipped?'vi-VN':'en-US'}')" title="Read aloud">🔊</span>
           </div>
           <div class="preview-face ${previewFlipped?'def':''}" onclick="togglePreviewFlip()">${previewFlipped ? escapeHtml(s.terms[previewIndex].definition||'(no definition)') : escapeHtml(s.terms[previewIndex].term)}</div>
           <div class="preview-footer"><span>⌨️</span> Press <kbd>Space</kbd> or click on the card to flip</div>
@@ -116,12 +116,12 @@ function shareSet(id){
   if(!s) return;
   const payload = JSON.stringify([s], null, 2);
   if(navigator.share){
-    navigator.share({title:s.title, text:`Bộ từ vựng "${s.title}" (${s.terms.length} từ)`}).catch(()=>{});
+    navigator.share({title:s.title, text:`Vocabulary set "${s.title}" (${s.terms.length} terms)`}).catch(()=>{});
     return;
   }
   if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(payload).then(()=>{
-      alert('Đã sao chép dữ liệu bộ từ (định dạng JSON) vào clipboard. Bạn có thể dán gửi cho người khác.');
+      alert('Set data (JSON) copied to clipboard. You can paste it to share with someone.');
     }).catch(()=>{
       exportSetJson(id);
     });
@@ -135,7 +135,7 @@ function duplicateSet(id){
   if(!s) return;
   const copy = {
     id: uid(),
-    title: s.title + ' (bản sao)',
+    title: s.title + ' (copy)',
     starred: false,
     terms: s.terms.map(t=>({id:uid(), term:t.term, definition:t.definition, mastered:false}))
   };
@@ -175,13 +175,13 @@ function exportSetJson(id){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = (s.title || 'bo-tu').replace(/[^\w\-]+/g,'_') + '.json';
+  a.download = (s.title || 'term-set').replace(/[^\w\-]+/g,'_') + '.json';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
 
 function deleteSetFromDetail(id){
-  if(!confirm('Xóa bộ từ này? Hành động không thể hoàn tác.')) return;
+  if(!confirm('Delete this set? This action cannot be undone.')) return;
   SETS = SETS.filter(s=>s.id!==id);
   saveSets(SETS);
   go('home');
@@ -204,12 +204,12 @@ function termRowHtml(t){
     return `
       <div class="term-row editing" data-term-id="${t.id}">
         <div class="term-row-content">
-          <input type="text" class="term-edit-input" id="editTermInput_${t.id}" value="${escapeAttr(t.term)}" placeholder="Thuật ngữ">
-          <input type="text" class="term-edit-input" id="editDefInput_${t.id}" value="${escapeAttr(t.definition)}" placeholder="Định nghĩa">
+          <input type="text" class="term-edit-input" id="editTermInput_${t.id}" value="${escapeAttr(t.term)}" placeholder="Term">
+          <input type="text" class="term-edit-input" id="editDefInput_${t.id}" value="${escapeAttr(t.definition)}" placeholder="Definition">
         </div>
         <div class="term-row-icons">
-          <button class="icon-btn round-btn small" title="Lưu" onclick="saveInlineEdit('${t.id}')">✔️</button>
-          <button class="icon-btn round-btn small" title="Hủy" onclick="cancelInlineEdit()">✕</button>
+          <button class="icon-btn round-btn small" title="Save" onclick="saveInlineEdit('${t.id}')">✔️</button>
+          <button class="icon-btn round-btn small" title="Cancel" onclick="cancelInlineEdit()">✕</button>
         </div>
       </div>
     `;
@@ -217,9 +217,9 @@ function termRowHtml(t){
   return `
     <div class="term-row">
       <div class="term-row-icons">
-        <button class="icon-btn round-btn small" title="${t.starred?'Bỏ đánh dấu':'Đánh dấu quan trọng'}" onclick="toggleStarTerm('${t.id}')">${t.starred?'⭐':'☆'}</button>
-        <button class="icon-btn round-btn small" title="Đọc to" onclick="speak('${escapeAttr(t.term)}','en-US')">🔊</button>
-        <button class="icon-btn round-btn small" title="Sửa" onclick="startInlineEdit('${t.id}')">✏️</button>
+        <button class="icon-btn round-btn small" title="${t.starred?'Unstar':'Star as important'}" onclick="toggleStarTerm('${t.id}')">${t.starred?'⭐':'☆'}</button>
+        <button class="icon-btn round-btn small" title="Read aloud" onclick="speak('${escapeAttr(t.term)}','en-US')">🔊</button>
+        <button class="icon-btn round-btn small" title="Edit" onclick="startInlineEdit('${t.id}')">✏️</button>
       </div>
       <div class="term-row-content">
         <div class="t">${escapeHtml(t.term)} ${t.mastered?'<span class="mastered-tag">✓ Know</span>':''}</div>
@@ -262,7 +262,7 @@ function saveInlineEdit(termId){
   const newTerm = (termEl ? termEl.value : t.term).trim();
   const newDef = (defEl ? defEl.value : t.definition).trim();
   if(!newTerm){
-    alert('Thuật ngữ không được để trống.');
+    alert('Term cannot be empty.');
     return;
   }
   t.term = newTerm;

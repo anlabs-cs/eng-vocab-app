@@ -2,8 +2,8 @@
 document.addEventListener('keydown', (e)=>{
   if(view==='flashcards'){
     if(e.code==='Space'){ e.preventDefault(); fcFlip(); }
-    else if(e.key==='ArrowRight'){ fcNext(); }
-    else if(e.key==='ArrowLeft'){ fcPrev(); }
+    else if(e.key==='ArrowRight'){ fcKeyMark(true); }
+    else if(e.key==='ArrowLeft'){ fcKeyMark(false); }
     else if(e.key==='1'){ fcMark(false); }
     else if(e.key==='2' || e.key==='3'){ fcMark(true); }
   }
@@ -25,13 +25,13 @@ document.addEventListener('keydown', (e)=>{
     // seed a starter example set so the app isn't empty on first run
     SETS.push({
       id: uid(),
-      title: 'từ vựng mẫu',
+      title: 'Sample Vocabulary',
       terms: [
-        {id:uid(), term:'accommodation', definition:'chỗ ở'},
-        {id:uid(), term:'priority', definition:'ưu tiên'},
-        {id:uid(), term:'advantage', definition:'lợi thế'},
-        {id:uid(), term:'competition', definition:'cạnh tranh'},
-        {id:uid(), term:'interesting', definition:'thú vị'}
+        {id:uid(), term:'accommodation', definition:'a place to live or stay'},
+        {id:uid(), term:'priority', definition:'something treated as more important than other things'},
+        {id:uid(), term:'advantage', definition:'a condition that puts you in a favorable position'},
+        {id:uid(), term:'competition', definition:'a contest between rivals'},
+        {id:uid(), term:'interesting', definition:'holding your attention or curiosity'}
       ]
     });
     saveSetsLocal(SETS);

@@ -6,33 +6,33 @@ function renderResults(){
   let title, scoreLine, stats, retryFn, reviewHtml='';
 
   if(session.mode==='flashcards'){
-    title = 'Hoàn thành Flashcards!';
-    scoreLine = `${session.known} / ${session.total} đã thuộc`;
+    title = 'Flashcards complete!';
+    scoreLine = `${session.known} / ${session.total} known`;
     stats = `
-      <div class="rstat"><div class="n" style="color:var(--green)">${session.known}</div><div class="l">Đã thuộc</div></div>
-      <div class="rstat"><div class="n" style="color:var(--orange)">${session.total - session.known}</div><div class="l">Đang học</div></div>
+      <div class="rstat"><div class="n" style="color:var(--green)">${session.known}</div><div class="l">Known</div></div>
+      <div class="rstat"><div class="n" style="color:var(--orange)">${session.total - session.known}</div><div class="l">Still learning</div></div>
     `;
     retryFn = "go('flashcards')";
   } else if(session.mode==='learn'){
     const pct = session.total ? Math.round(session.correct/session.total*100) : 0;
-    title = 'Hoàn thành Learn!';
-    scoreLine = `${pct}% chính xác`;
+    title = 'Learn complete!';
+    scoreLine = `${pct}% correct`;
     stats = `
-      <div class="rstat"><div class="n" style="color:var(--green)">${session.correct}</div><div class="l">Trả lời đúng</div></div>
-      <div class="rstat"><div class="n">${session.total}</div><div class="l">Tổng câu hỏi</div></div>
+      <div class="rstat"><div class="n" style="color:var(--green)">${session.correct}</div><div class="l">Correct answers</div></div>
+      <div class="rstat"><div class="n">${session.total}</div><div class="l">Total questions</div></div>
     `;
     retryFn = "go('learn')";
   } else {
     const pct = session.total ? Math.round(session.correct/session.total*100) : 0;
-    title = pct>=80 ? 'Làm tốt lắm!' : (pct>=50 ? 'Khá ổn!' : 'Cố lên nào!');
+    title = pct>=80 ? 'Great job!' : (pct>=50 ? 'Pretty good!' : 'Keep practicing!');
     scoreLine = `${pct}%`;
     stats = `
-      <div class="rstat"><div class="n" style="color:var(--green)">${session.correct}</div><div class="l">Đúng</div></div>
-      <div class="rstat"><div class="n" style="color:var(--red)">${session.total-session.correct}</div><div class="l">Sai</div></div>
+      <div class="rstat"><div class="n" style="color:var(--green)">${session.correct}</div><div class="l">Correct</div></div>
+      <div class="rstat"><div class="n" style="color:var(--red)">${session.total-session.correct}</div><div class="l">Wrong</div></div>
     `;
     retryFn = "go('test-setup')";
     reviewHtml = `
-      <div class="term-list-header"><h3>Chi tiết bài làm</h3></div>
+      <div class="term-list-header"><h3>Answer review</h3></div>
       ${session.questions.map((q,i)=>{
         if(q.type==='matching'){
           const rows = q.terms.map(t=>{
@@ -43,15 +43,15 @@ function renderResults(){
               <div style="margin-top:6px; padding-top:6px; border-top:1px dashed var(--border);">
                 <span style="color:var(--text);">${escapeHtml(t.term)}</span>
                 <span style="color:var(--text-dim);"> → </span>
-                <span style="color:${rowCorrect?'var(--green)':'var(--red)'};">${escapeHtml(userDef ? userDef.text : '(chưa nối)')}</span>
-                ${!rowCorrect ? `<div style="color:var(--text-dim);">Đáp án đúng: <strong style="color:var(--text);">${escapeHtml(t.definition)}</strong></div>` : ''}
+                <span style="color:${rowCorrect?'var(--green)':'var(--red)'};">${escapeHtml(userDef ? userDef.text : '(not matched)')}</span>
+                ${!rowCorrect ? `<div style="color:var(--text-dim);">Correct answer: <strong style="color:var(--text);">${escapeHtml(t.definition)}</strong></div>` : ''}
               </div>
             `;
           }).join('');
           return `
             <div class="test-q">
-              <div class="qn">Câu ${i+1}
-                <span class="review-tag ${q.isCorrect?'correct':'wrong'}">${q.isCorrect?'Đúng':'Sai'}</span>
+              <div class="qn">Question ${i+1}
+                <span class="review-tag ${q.isCorrect?'correct':'wrong'}">${q.isCorrect?'Correct':'Wrong'}</span>
               </div>
               <div class="qterm">Matching</div>
               ${rows}
@@ -60,11 +60,11 @@ function renderResults(){
         }
         return `
         <div class="test-q">
-          <div class="qn">Câu ${i+1}
-            <span class="review-tag ${q.isCorrect?'correct':'wrong'}">${q.isCorrect?'Đúng':'Sai'}</span>
+          <div class="qn">Question ${i+1}
+            <span class="review-tag ${q.isCorrect?'correct':'wrong'}">${q.isCorrect?'Correct':'Wrong'}</span>
           </div>
           <div class="qterm">${escapeHtml(q.term.term)}</div>
-          <div style="color:var(--text-dim);">Đáp án đúng: <strong style="color:var(--text);">${escapeHtml(q.term.definition)}</strong></div>
+          <div style="color:var(--text-dim);">Correct answer: <strong style="color:var(--text);">${escapeHtml(q.term.definition)}</strong></div>
         </div>
       `;
       }).join('')}
@@ -79,8 +79,8 @@ function renderResults(){
         <div class="results-score">${scoreLine}</div>
         <div class="results-stats">${stats}</div>
         <div style="display:flex; gap:12px; justify-content:center;">
-          <button class="btn-ghost" onclick="go('detail')">Quay lại bộ từ</button>
-          <button class="btn-primary" onclick="${retryFn}">Học lại</button>
+          <button class="btn-ghost" onclick="go('detail')">Back to set</button>
+          <button class="btn-primary" onclick="${retryFn}">Study again</button>
         </div>
       </div>
       ${reviewHtml}

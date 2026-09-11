@@ -67,9 +67,9 @@ function renderTestSetup(){
             <div class="modal-row">
               <span>Answer with</span>
               <select class="select-input" onchange="setTestOpt('answerWith', this.value)">
-                <option value="definition" ${cfg.answerWith==='definition'?'selected':''}>Definition (Tiếng Việt)</option>
-                <option value="term" ${cfg.answerWith==='term'?'selected':''}>Term (Tiếng Anh)</option>
-                <option value="both" ${cfg.answerWith==='both'?'selected':''}>Trộn cả hai (Anh & Việt)</option>
+                <option value="definition" ${cfg.answerWith==='definition'?'selected':''}>Definition</option>
+                <option value="term" ${cfg.answerWith==='term'?'selected':''}>Term</option>
+                <option value="both" ${cfg.answerWith==='both'?'selected':''}>Mix both</option>
               </select>
             </div>
             <div class="modal-row">
@@ -145,8 +145,8 @@ function startTest(){
 
   const chosenTerms = shuffle(basePool).slice(0, cfg.count);
 
-  // Matching luôn được thêm thành 1 khối câu hỏi riêng (nếu được bật),
-  // và có thể xuất hiện cùng với các loại câu hỏi khác.
+  // Matching is always added as its own question block (when enabled),
+  // and can appear alongside other question types.
   const nonMatchingTypes = types.filter(t=>t!=='matching');
   const questions = [];
 
@@ -269,7 +269,7 @@ function renderMatchingBody(q, qi){
           ondragleave="matchZoneDragLeave(event)"
           ondrop="matchZoneDrop(event, ${qi}, '${t.id}')"
           onclick="matchZoneClick(${qi}, '${t.id}')">
-          <span>${rightItem ? escapeHtml(rightItem.text) : 'Kéo đáp án vào đây'}</span>
+          <span>${rightItem ? escapeHtml(rightItem.text) : 'Drag an answer here'}</span>
           ${rightItem ? `<span class="remove-x" onclick="event.stopPropagation(); matchRemove(${qi}, '${t.id}')">×</span>` : ''}
         </div>
       </div>
@@ -289,7 +289,7 @@ function renderMatchingBody(q, qi){
   return `
     <div class="matching-rows">${rows}</div>
     <div class="matching-bank-label"></div>
-    <div class="matching-bank">${bankHtml || '<span style="color:var(--text-dim);">Đã ghép hết</span>'}</div>
+    <div class="matching-bank">${bankHtml || '<span style="color:var(--text-dim);">All matched</span>'}</div>
   `;
 }
 
@@ -311,7 +311,7 @@ function matchChipDragStart(e, qi, rightId){
 }
 function matchChipDragEnd(e){ e.currentTarget.classList.remove('dragging'); }
 
-// Fallback chạm/click cho thiết bị không hỗ trợ kéo thả tốt (điện thoại)
+// Fallback tap/click for devices without good drag-and-drop support (mobile)
 function matchChipClick(qi, rightId){
   const q = session.testQuestions[qi];
   q.selectedRight = (q.selectedRight === rightId) ? null : rightId;
@@ -319,7 +319,7 @@ function matchChipClick(qi, rightId){
 }
 function matchZoneClick(qi, leftId){
   const q = session.testQuestions[qi];
-  if(q.matches[leftId]) return; // ô đã điền: dùng nút × để xóa
+  if(q.matches[leftId]) return; // already filled: use the × button to remove
   if(q.selectedRight){
     assignMatch(qi, leftId, q.selectedRight);
     q.selectedRight = null;

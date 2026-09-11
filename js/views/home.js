@@ -15,13 +15,13 @@ function render(){
 function fileStatusHtml(){
   if(!FS_SUPPORTED){
     return `
-      <button class="btn-ghost" onclick="exportJsonFallback()" title="Tải toàn bộ dữ liệu về máy dạng .json">Tải .json</button>
-      <button class="btn-ghost" onclick="importJsonFallbackTrigger()" title="Nạp dữ liệu từ 1 file .json">Nhập .json</button>
+      <button class="btn-ghost" onclick="exportJsonFallback()" title="Download all your data as a .json file">Download .json</button>
+      <button class="btn-ghost" onclick="importJsonFallbackTrigger()" title="Load data from a .json file">Import .json</button>
       <input type="file" id="importFileInput" accept=".json,application/json" style="display:none" onchange="importJsonFallbackChange(event)">
     `;
   }
   if(fileSyncStatus==='connected'){
-    return `<button class="btn-ghost" title="Đổi sang file khác" onclick="connectExistingFile()">.json</button>`;
+    return `<button class="btn-ghost" title="Switch to a different file" onclick="connectExistingFile()">.json</button>`;
   }
   if(fileSyncStatus==='saving'){
     return `<button class="btn-ghost" disabled>Saving...</button>`;
@@ -30,11 +30,11 @@ function fileStatusHtml(){
     return `<button class="btn-primary" onclick="reconnectFile()">.json</button>`;
   }
   if(fileSyncStatus==='error'){
-    return `<button class="btn-ghost" style="color:var(--red);" onclick="connectExistingFile()" title="Lưu file thất bại, thử lại">Lỗi lưu file</button>`;
+    return `<button class="btn-ghost" style="color:var(--red);" onclick="connectExistingFile()" title="Failed to save file, try again">Save failed</button>`;
   }
   return `
-    <button class="btn-ghost" onclick="connectExistingFile()" title="Chọn 1 file .json có sẵn để lưu/đọc dữ liệu">Open file .json</button>
-    <button class="btn-ghost" onclick="createNewFile()" title="Tạo file .json mới trên máy để lưu dữ liệu">New file</button>
+    <button class="btn-ghost" onclick="connectExistingFile()" title="Choose an existing .json file to save/load data">Open file .json</button>
+    <button class="btn-ghost" onclick="createNewFile()" title="Create a new local .json file to save data">New file</button>
   `;
 }
 
@@ -46,6 +46,7 @@ function topNav(showBack){
       </div>
       <div class="spacer"></div>
       ${fileStatusHtml()}
+      <button class="icon-btn" title="${currentTheme()==='light'?'Switch to dark mode':'Switch to light mode'}" onclick="toggleTheme()">${currentTheme()==='light'?'🌙':'☀️'}</button>
       <button class="icon-btn" title="Create" onclick="createNewSet()">＋</button>
     </div>
   `;
@@ -202,7 +203,7 @@ function openSet(id){
 }
 
 function deleteSet(id){
-  if(!confirm('Xóa bộ từ này? Hành động không thể hoàn tác.')) return;
+  if(!confirm('Delete this set? This action cannot be undone.')) return;
   SETS = SETS.filter(s=>s.id!==id);
   saveSets(SETS);
   render();

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
@@ -18,13 +18,14 @@
 
     <div id="app"></div>
 
-    <!-- Core: dữ liệu, lưu file, tiến độ/streak, TTS, hàm dùng chung -->
+    <!-- Core: data, file storage, progress/streak, TTS, shared helpers -->
     <script src="js/state.js"></script>
+    <script src="js/theme.js"></script>
     <script src="js/filesync.js"></script>
     <script src="js/progress.js"></script>
     <script src="js/helpers.js"></script>
 
-    <!-- Views: mỗi màn hình 1 file -->
+    <!-- Views: one file per screen -->
     <script src="js/views/home.js"></script>
     <script src="js/views/detail.js"></script>
     <script src="js/views/editor.js"></script>
@@ -33,7 +34,7 @@
     <script src="js/views/test.js"></script>
     <script src="js/views/results.js"></script>
 
-    <!-- Khởi động app (phải load sau cùng) -->
+    <!-- App bootstrap (must load last) -->
     <script src="js/main.js"></script>
 </body>
 

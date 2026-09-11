@@ -9,18 +9,18 @@ function renderEditor(){
   root.innerHTML = `
     ${topNav()}
     <div class="page">
-      <div class="crumb"><a onclick="go('home')">Bộ từ vựng</a> <span>/</span> <a onclick="go('detail')">${escapeHtml(s.title)}</a></div>
+      <div class="crumb"><a onclick="go('home')">Vocabulary</a> <span>/</span> <a onclick="go('detail')">${escapeHtml(s.title)}</a></div>
       <input class="title-input" id="setTitleInput" value="${escapeAttr(s.title)}" placeholder="Enter a title">
 
-      <button class="toggle-link" onclick="toggleImport()" id="importToggle">📋 Dán danh sách để nhập nhanh</button>
+      <button class="toggle-link" onclick="toggleImport()" id="importToggle">📋 Paste a list to import quickly</button>
       <div id="importBox" class="hidden" style="margin-top:12px;">
-        <textarea class="import-box" id="importText" placeholder="accommodation - chỗ ở
-priority	ưu tiên
+        <textarea class="import-box" id="importText" placeholder="accommodation - a place to live or stay
+priority	high importance
 
-Mỗi dòng 1 từ, phân cách thuật ngữ và định nghĩa bằng dấu gạch ngang ( - ) hoặc Tab."></textarea>
+One term per line, separate term and definition with a dash ( - ) or Tab."></textarea>
         <div style="display:flex; gap:10px; margin-top:10px;">
-          <button class="btn-primary" onclick="applyImport()">Nhập danh sách</button>
-          <button class="btn-ghost" onclick="toggleImport()">Hủy</button>
+          <button class="btn-primary" onclick="applyImport()">Import list</button>
+          <button class="btn-ghost" onclick="toggleImport()">Cancel</button>
         </div>
       </div>
 
@@ -30,8 +30,8 @@ Mỗi dòng 1 từ, phân cách thuật ngữ và định nghĩa bằng dấu g�
       <button class="add-row-btn" onclick="addRow()">Add a card</button>
 
       <div class="editor-actions">
-        <button class="btn-ghost" onclick="go('detail')">Hủy</button>
-        <button class="btn-primary" onclick="saveEditor()">Lưu bộ từ</button>
+        <button class="btn-ghost" onclick="go('detail')">Cancel</button>
+        <button class="btn-primary" onclick="saveEditor()">Save set</button>
       </div>
     </div>
   `;
@@ -43,18 +43,41 @@ function editorRowHtml(t,i){
       <div class="num">${i+1}</div>
       <div class="editor-col">
         <span class="field-label">Term</span>
-        <input type="text" class="term-input" value="${escapeAttr(t.term)}" placeholder="vd: accommodation">
+        <input type="text" class="term-input" value="${escapeAttr(t.term)}" placeholder="e.g. accommodation">
       </div>
       <div class="editor-col">
         <span class="field-label">Definition</span>
-        <input type="text" class="def-input" value="${escapeAttr(t.definition)}" placeholder="vd: chỗ ở">
+        <input type="text" class="def-input" value="${escapeAttr(t.definition)}" placeholder="e.g. a place to live or stay">
       </div>
       <button class="rm" onclick="removeRow('${t.id}')">✕</button>
     </div>
   `;
 }
 
+/* Sync whatever is currently typed in the form back into the in-memory
+   model, WITHOUT filtering/defaulting anything — used before any action
+   that triggers a re-render (add/remove row, import), so nothing typed
+   gets lost. */
+function syncEditorFieldsToModel(){
+  const s = getSet(currentSetId);
+  if(!s) return;
+  const titleEl = document.getElementById('setTitleInput');
+  if(titleEl) s.title = titleEl.value;
+  const rows = document.querySelectorAll('#rowsContainer .editor-row');
+  if(rows.length){
+    const terms = [];
+    rows.forEach(row=>{
+      const id = row.getAttribute('data-id');
+      const term = row.querySelector('.term-input').value;
+      const def = row.querySelector('.def-input').value;
+      terms.push({id, term, definition:def});
+    });
+    s.terms = terms;
+  }
+}
+
 function addRow(){
+  syncEditorFieldsToModel();
   const s = getSet(currentSetId);
   s.terms.push({id:uid(), term:'', definition:''});
   renderEditor();
@@ -63,6 +86,7 @@ function addRow(){
 }
 
 function removeRow(id){
+  syncEditorFieldsToModel();
   const s = getSet(currentSetId);
   s.terms = s.terms.filter(t=>t.id!==id);
   renderEditor();
@@ -75,9 +99,10 @@ function toggleImport(){
 function applyImport(){
   const text = document.getElementById('importText').value;
   if(!text.trim()) return;
-  const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
+  syncEditorFieldsToModel();
   const s = getSet(currentSetId);
   const newTerms = [];
+  const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
   lines.forEach(line=>{
     let parts;
     if(line.includes('\t')) parts = line.split('\t');
@@ -108,7 +133,7 @@ function collectEditorData(){
     const def = row.querySelector('.def-input').value.trim();
     if(term || def) terms.push({id, term, definition:def});
   });
-  s.title = document.getElementById('setTitleInput').value.trim() || 'Bộ từ chưa đặt tên';
+  s.title = document.getElementById('setTitleInput').value.trim() || 'Untitled set';
   s.terms = terms;
 }
 
@@ -116,7 +141,7 @@ function saveEditor(){
   collectEditorData();
   const s = getSet(currentSetId);
   if(s.terms.length===0){
-    alert('Thêm ít nhất 1 thuật ngữ trước khi lưu.');
+    alert('Add at least one term before saving.');
     return;
   }
   saveSets(SETS);

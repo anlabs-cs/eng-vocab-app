@@ -225,9 +225,9 @@ function learnSettingsModalHtml(){
             <div class="modal-row">
               <span>Show</span>
               <select class="select-input" onchange="learnDraftSet('answerWith', this.value)">
-                <option value="definition" ${draft.answerWith==='definition'?'selected':''}>Term → Definition (Tiếng Việt)</option>
-                <option value="term" ${draft.answerWith==='term'?'selected':''}>Definition → Term (Tiếng Anh)</option>
-                <option value="both" ${draft.answerWith==='both'?'selected':''}>Trộn cả hai (Anh & Việt)</option>
+                <option value="definition" ${draft.answerWith==='definition'?'selected':''}>Term → Definition</option>
+                <option value="term" ${draft.answerWith==='term'?'selected':''}>Definition → Term</option>
+                <option value="both" ${draft.answerWith==='both'?'selected':''}>Mix both directions</option>
               </select>
             </div>
           </div>

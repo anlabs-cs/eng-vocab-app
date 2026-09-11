@@ -55,7 +55,7 @@ function parseSetsPayload(text){
 
 async function useFileHandle(handle){
   const ok = await verifyPermission(handle);
-  if(!ok){ alert('Trình duyệt từ chối quyền truy cập file.'); return; }
+  if(!ok){ alert('The browser denied access to the file.'); return; }
   fileHandle = handle;
   fileName = handle.name;
   const file = await handle.getFile();
@@ -64,7 +64,7 @@ async function useFileHandle(handle){
     try{
       SETS = parseSetsPayload(text);
     }catch(e){
-      alert('File JSON này không đúng định dạng bộ từ vựng.');
+      alert('This JSON file is not in the expected vocabulary set format.');
       fileHandle = null; fileName = null; fileSyncStatus='none';
       return;
     }
@@ -85,7 +85,7 @@ async function connectExistingFile(){
       types:[{description:'Vocab JSON', accept:{'application/json':['.json']}}]
     });
     if(SETS.length>0){
-      const ok = confirm('Mở file này sẽ thay thế dữ liệu đang hiển thị bằng nội dung của file đã chọn. Tiếp tục?');
+      const ok = confirm('Opening this file will replace the currently displayed data with its contents. Continue?');
       if(!ok) return;
     }
     await useFileHandle(handle);
@@ -96,7 +96,7 @@ async function createNewFile(){
   if(!FS_SUPPORTED) return;
   try{
     const handle = await window.showSaveFilePicker({
-      suggestedName:'tu-vung.json',
+      suggestedName:'vocabulary.json',
       types:[{description:'Vocab JSON', accept:{'application/json':['.json']}}]
     });
     fileHandle = handle;
@@ -122,7 +122,7 @@ async function reconnectFile(){
       go('home');
     }catch(e){
       console.error(e);
-      alert('Không đọc được file. Hãy thử kết nối lại file khác.');
+      alert('Could not read the file. Try connecting a different file.');
     }
   }
 }
@@ -172,7 +172,7 @@ function exportJsonFallback(){
   const blob = new Blob([JSON.stringify(SETS, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = (fileName || 'tu-vung') + (String(fileName).endsWith('.json')?'':'.json');
+  a.href = url; a.download = (fileName || 'vocabulary') + (String(fileName).endsWith('.json')?'':'.json');
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
@@ -184,7 +184,7 @@ function importJsonFallbackChange(evt){
   const file = evt.target.files[0];
   if(!file) return;
   if(SETS.length>0){
-    const ok = confirm('Nhập file này sẽ thay thế dữ liệu đang hiển thị. Tiếp tục?');
+    const ok = confirm('Importing this file will replace the currently displayed data. Continue?');
     if(!ok){ evt.target.value=''; return; }
   }
   const reader = new FileReader();
@@ -195,7 +195,7 @@ function importJsonFallbackChange(evt){
       fileName = file.name;
       currentSetId = SETS[0] ? SETS[0].id : null;
       go('home');
-    }catch(e){ alert('File JSON không hợp lệ.'); }
+    }catch(e){ alert('Invalid JSON file.'); }
   };
   reader.readAsText(file);
   evt.target.value = '';

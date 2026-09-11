@@ -46,7 +46,7 @@ function setMasteryStats(s){
 }
 
 /* =========================================================
-   TEXT-TO-SPEECH (Web Speech API — có sẵn trong trình duyệt)
+   TEXT-TO-SPEECH (Web Speech API — built into the browser)
 ========================================================= */
 const TTS_SUPPORTED = 'speechSynthesis' in window;
 function speak(text, lang){
