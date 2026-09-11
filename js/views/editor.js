@@ -12,7 +12,7 @@ function renderEditor(){
       <div class="crumb"><a onclick="go('home')">Vocabulary</a> <span>/</span> <a onclick="go('detail')">${escapeHtml(s.title)}</a></div>
       <input class="title-input" id="setTitleInput" value="${escapeAttr(s.title)}" placeholder="Enter a title">
 
-      <button class="toggle-link" onclick="toggleImport()" id="importToggle">📋 Paste a list to import quickly</button>
+      <button class="toggle-link" onclick="toggleImport()" id="importToggle"><img src="img/import.png" class="theme-icon"> Paste a list to import quickly</button>
       <div id="importBox" class="hidden" style="margin-top:12px;">
         <textarea class="import-box" id="importText" placeholder="accommodation - a place to live or stay
 priority	high importance
@@ -49,7 +49,7 @@ function editorRowHtml(t,i){
         <span class="field-label">Definition</span>
         <input type="text" class="def-input" value="${escapeAttr(t.definition)}" placeholder="e.g. a place to live or stay">
       </div>
-      <button class="rm" onclick="removeRow('${t.id}')">✕</button>
+      <button class="rm" onclick="removeRow('${t.id}')"><img src="img/x.png" class="theme-icon"></button>
     </div>
   `;
 }

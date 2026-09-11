@@ -131,8 +131,8 @@ function renderLearn(){
         <div class="left">Learn</div>
         <div class="center"><span>${doneCount} / ${session.roundTotal}</span><span class="setname">${escapeHtml(s.title)}</span></div>
         <div class="right">
-          <button class="icon-btn" title="Settings" onclick="learnOpenSettings()">⚙️</button>
-          <button class="icon-btn" onclick="go('detail')">✕</button>
+          <button class="icon-btn" title="Settings" onclick="learnOpenSettings()"><img src="img/settings.png" class="theme-icon"></button>
+          <button class="icon-btn" onclick="go('detail')"><img src="img/x.png" class="theme-icon"></button>
         </div>
       </div>
       <div class="study-body">
@@ -142,7 +142,7 @@ function renderLearn(){
           </div>
 
           <div id="feedbackBanner" class="feedback-banner ${session.answered ? (session.wasCorrect?'ok show':'bad show') : ''}">
-            ${session.answered ? (session.wasCorrect ? '✓ Correct!' : `✕ Incorrect — answer: ${escapeHtml(q.correct||'')}`) : ''}
+            ${session.answered ? (session.wasCorrect ? '✓ Correct!' : `<img src="img/x.png" class="theme-icon"> Incorrect — answer: ${escapeHtml(q.correct||'')}`) : ''}
           </div>
 
           <div class="learn-card">
@@ -154,7 +154,7 @@ function renderLearn(){
 
           <div class="learn-footer">
             <button class="link-btn" onclick="learnDontKnow()" ${session.answered?'disabled':''}>Don't know?</button>
-            ${session.answered ? `<button class="btn-primary" onclick="learnNext()">Continue →</button>` : ''}
+            ${session.answered ? `<button class="btn-primary" onclick="learnNext()">Continue <img src="img/arrow-right.png" class="theme-icon"></button>` : ''}
           </div>
         </div>
       </div>
@@ -190,18 +190,18 @@ function learnSettingsModalHtml(){
   return `
     <div class="modal-overlay" onclick="learnCloseSettings()">
       <div class="modal" onclick="event.stopPropagation()" style="position:relative;">
-        <button class="modal-close" onclick="learnCloseSettings()">✕</button>
+        <button class="modal-close" onclick="learnCloseSettings()"><img src="img/x.png" class="theme-icon"></button>
         <h2>Options</h2>
 
         <div class="pill-row">
-          <button class="pill-toggle ${draft.shuffle?'on':''}" onclick="learnDraftToggle('shuffle')">🔀 Shuffle</button>
-          <button class="pill-toggle ${draft.studyStarred?'on':''} ${hasStarred?'':'disabled'}" ${hasStarred?'':'disabled'} onclick="learnDraftToggle('studyStarred')">☆ Study starred</button>
-          <button class="pill-toggle ${draft.soundEffects?'on':''}" onclick="learnDraftToggle('soundEffects')">🔊 Sound effects</button>
+          <button class="pill-toggle ${draft.shuffle?'on':''}" onclick="learnDraftToggle('shuffle')"><img src="img/shuffle.png" class="theme-icon"> Shuffle</button>
+          <button class="pill-toggle ${draft.studyStarred?'on':''} ${hasStarred?'':'disabled'}" ${hasStarred?'':'disabled'} onclick="learnDraftToggle('studyStarred')"><img src="img/star1.png" class="theme-icon"> Study starred</button>
+          <button class="pill-toggle ${draft.soundEffects?'on':''}" onclick="learnDraftToggle('soundEffects')"><img src="img/volume-2.png" class="theme-icon"> Sound effects</button>
         </div>
 
         <div class="accordion-row" onclick="learnToggleAccordion('questionTypes')">
           <span>Question types</span>
-          <span class="chev ${acc.questionTypes?'open':''}">⌄</span>
+          <span class="chev ${acc.questionTypes?'open':''}"><img src="img/chevron-down.png" class="theme-icon"></span>
         </div>
         ${acc.questionTypes ? `
           <div class="accordion-panel">
@@ -218,15 +218,15 @@ function learnSettingsModalHtml(){
 
         <div class="accordion-row" onclick="learnToggleAccordion('answerWith')">
           <span>Answer with</span>
-          <span class="chev ${acc.answerWith?'open':''}">⌄</span>
+          <span class="chev ${acc.answerWith?'open':''}"><img src="img/chevron-down.png" class="theme-icon"></span>
         </div>
         ${acc.answerWith ? `
           <div class="accordion-panel">
             <div class="modal-row">
               <span>Show</span>
               <select class="select-input" onchange="learnDraftSet('answerWith', this.value)">
-                <option value="definition" ${draft.answerWith==='definition'?'selected':''}>Term → Definition</option>
-                <option value="term" ${draft.answerWith==='term'?'selected':''}>Definition → Term</option>
+                <option value="definition" ${draft.answerWith==='definition'?'selected':''}>Term <img src="img/arrow-right.png" class="theme-icon"> Definition</option>
+                <option value="term" ${draft.answerWith==='term'?'selected':''}>Definition <img src="img/arrow-right.png" class="theme-icon"> Term</option>
                 <option value="both" ${draft.answerWith==='both'?'selected':''}>Mix both directions</option>
               </select>
             </div>
@@ -235,7 +235,7 @@ function learnSettingsModalHtml(){
 
         <div class="accordion-row" onclick="learnToggleAccordion('grading')">
           <span>Grading options</span>
-          <span class="chev ${acc.grading?'open':''}">⌄</span>
+          <span class="chev ${acc.grading?'open':''}"><img src="img/chevron-down.png" class="theme-icon"></span>
         </div>
         ${acc.grading ? `
           <div class="accordion-panel">
@@ -256,11 +256,11 @@ function learnSettingsModalHtml(){
 
         <div class="modal-row" style="cursor:pointer;" onclick="learnQuickStart('multipleChoice')">
           <span>Multiple choice mode</span>
-          <span class="modal-row-link">Start <span>›</span></span>
+          <span class="modal-row-link">Start <span><img src="img/chevron-right.png" class="theme-icon"></span></span>
         </div>
         <div class="modal-row" style="cursor:pointer;" onclick="learnQuickStart('written')">
           <span>Written mode</span>
-          <span class="modal-row-link">Start <span>›</span></span>
+          <span class="modal-row-link">Start <span><img src="img/chevron-right.png" class="theme-icon"></span></span>
         </div>
 
         <div class="modal-row">

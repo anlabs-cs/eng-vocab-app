@@ -22,8 +22,8 @@ function renderFlashcards(){
         <div class="center"><span>${session.idx+1} / ${session.order.length}</span><span class="setname">${escapeHtml(s.title)}</span></div>
         <div class="right">
           
-          <button class="icon-btn" title="Options" onclick="fcOpenOptions()">⚙️</button>
-          <button class="icon-btn" title="Close" onclick="go('detail')">✕</button>
+          <button class="icon-btn" title="Options" onclick="fcOpenOptions()"><img src="img/settings.png" class="theme-icon"></button>
+          <button class="icon-btn" title="Close" onclick="go('detail')"><img src="img/x.png" class="theme-icon"></button>
         </div>
       </div>
       <div class="study-body">
@@ -34,20 +34,20 @@ function renderFlashcards(){
           </div>
 
           <div class="flip-card" id="flipCardEl">
-            <div class="fc-head"><span>💡 Hint</span><span onclick="event.stopPropagation(); speak('${escapeAttr(session.flipped?term.definition:term.term)}', '${session.flipped?'vi-VN':'en-US'}')" title="Read aloud">🔊</span></div>
+            <div class="fc-head"><span><img src="img/lightbulb.png" class="theme-icon"> Hint</span><span onclick="event.stopPropagation(); speak('${escapeAttr(session.flipped?term.definition:term.term)}', '${session.flipped?'vi-VN':'en-US'}')" title="Read aloud"><img src="img/volume-2.png" class="theme-icon"></span></div>
             <div class="fc-face ${session.flipped?'def':''}">${session.flipped ? escapeHtml(term.definition||'(no definition yet)') : escapeHtml(term.term)}</div>
-            <div class="fc-foot">⌨️ Press <kbd>Space</kbd> or click to flip · Swipe right = Known, swipe left = Still learning</div>
+            <div class="fc-foot"><img src="img/keyboard.png" class="theme-icon"> Press <kbd>Space</kbd> or click to flip · Swipe right = Known, swipe left = Still learning</div>
           </div>
 
           <div class="fc-bottom-row">
             <div class="fc-controls">
-              <button class="fc-circle no" title="Still learning" onclick="fcMark(false)">✕</button>
-              <button class="fc-circle yes" title="Known" onclick="fcMark(true)">✓</button>
+              <button class="fc-circle no" title="Still learning" onclick="fcMark(false)"><img src="img/x.png" class="theme-icon"></button>
+              <button class="fc-circle yes" title="Known" onclick="fcMark(true)"><img src="img/check.png" class="theme-icon"></button>
             </div>
           </div>
 
           <div style="text-align:center; margin-top:14px;">
-            <button class="link-btn" title="Undo last review" onclick="fcUndo()" ${session.history.length===0?'disabled':''}>↺ Undo</button>
+            <button class="link-btn" title="Undo last review" onclick="fcUndo()" ${session.history.length===0?'disabled':''}><img src="img/undo.png" class="theme-icon"> Undo</button>
           </div>
         </div>
       </div>
@@ -140,14 +140,14 @@ function fcOptionsModalHtml(){
   return `
     <div class="modal-overlay" onclick="fcCloseOptions()">
       <div class="modal" onclick="event.stopPropagation()" style="position:relative;">
-        <button class="modal-close" onclick="fcCloseOptions()">✕</button>
+        <button class="modal-close" onclick="fcCloseOptions()"><img src="img/x.png" class="theme-icon"></button>
         <h2>Options</h2>
         <div class="modal-row" style="cursor:pointer;" onclick="fcShuffle()">
-          <span>${session.shuffleOn?'🔀':'↔️'} Shuffle</span>
+          <span>${session.shuffleOn?'<img src="img/shuffle.png" class="theme-icon">':'<img src="img/arrow-right-left.png" class="theme-icon">'} Shuffle</span>
           <span class="switch ${session.shuffleOn?'on':''}"><span class="knob"></span></span>
         </div>
         <div class="modal-row" style="cursor:pointer;" onclick="fcRestart()">
-          <span>↻ Restart</span>
+          <span><img src="img/rotate-ccw.png" class="theme-icon"> Restart</span>
         </div>
         <div class="modal-actions">
           <button class="btn-primary" onclick="fcCloseOptions()">Done</button>

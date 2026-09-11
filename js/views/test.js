@@ -24,7 +24,7 @@ function renderTestSetup(){
   root.innerHTML = `
     <div class="modal-overlay">
       <div class="modal" style="position:relative;">
-        <button class="modal-close" onclick="go('detail')">✕</button>
+        <button class="modal-close" onclick="go('detail')"><img src="img/x.png" class="theme-icon"></button>
         <h2>Options</h2>
 
         <div class="modal-row">
@@ -60,7 +60,7 @@ function renderTestSetup(){
 
         <div class="modal-row" style="cursor:pointer;" onclick="toggleTestSection('formatOpen')">
           <span>Question format</span>
-          <span class="modal-row-link">View <span style="display:inline-block; transform:${session.formatOpen?'rotate(180deg)':'rotate(0)'};">▾</span></span>
+          <span class="modal-row-link">View <span style="display:inline-block; transform:${session.formatOpen?'rotate(180deg)':'rotate(0)'};"><img src="img/chevron-down.png" class="theme-icon"></span></span>
         </div>
         ${session.formatOpen ? `
           <div class="modal-subpanel">
@@ -81,7 +81,7 @@ function renderTestSetup(){
 
         <div class="modal-row" style="cursor:pointer;" onclick="toggleTestSection('gradingOpen')">
           <span>Grading options</span>
-          <span class="modal-row-link">View <span style="display:inline-block; transform:${session.gradingOpen?'rotate(180deg)':'rotate(0)'};">▾</span></span>
+          <span class="modal-row-link">View <span style="display:inline-block; transform:${session.gradingOpen?'rotate(180deg)':'rotate(0)'};"><img src="img/chevron-down.png" class="theme-icon"></span></span>
         </div>
         ${session.gradingOpen ? `
           <div class="modal-subpanel">
@@ -238,7 +238,7 @@ function renderTest(){
       <div class="study-top">
         <div class="left">Test</div>
         <div class="center"><span class="setname">${escapeHtml(s.title)}</span></div>
-        <div class="right"><button class="icon-btn" onclick="go('detail')">✕</button></div>
+        <div class="right"><button class="icon-btn" onclick="go('detail')"><img src="img/x.png" class="theme-icon"></button></div>
       </div>
       <div class="study-body">
         <div class="study-inner">
@@ -270,7 +270,7 @@ function renderMatchingBody(q, qi){
           ondrop="matchZoneDrop(event, ${qi}, '${t.id}')"
           onclick="matchZoneClick(${qi}, '${t.id}')">
           <span>${rightItem ? escapeHtml(rightItem.text) : 'Drag an answer here'}</span>
-          ${rightItem ? `<span class="remove-x" onclick="event.stopPropagation(); matchRemove(${qi}, '${t.id}')">×</span>` : ''}
+          ${rightItem ? `<span class="remove-x" onclick="event.stopPropagation(); matchRemove(${qi}, '${t.id}')"><img src="img/x.png" class="theme-icon"></span>` : ''}
         </div>
       </div>
     `;
@@ -319,7 +319,7 @@ function matchChipClick(qi, rightId){
 }
 function matchZoneClick(qi, leftId){
   const q = session.testQuestions[qi];
-  if(q.matches[leftId]) return; // already filled: use the × button to remove
+  if(q.matches[leftId]) return; // already filled: use the <img src="img/x.png" class="theme-icon"> button to remove
   if(q.selectedRight){
     assignMatch(qi, leftId, q.selectedRight);
     q.selectedRight = null;
