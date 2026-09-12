@@ -34,7 +34,7 @@ function renderFlashcards(){
           </div>
 
           <div class="flip-card" id="flipCardEl">
-            <div class="fc-head"><span><img src="img/lightbulb.png" class="theme-icon"> Hint</span><span onclick="event.stopPropagation(); speak('${escapeAttr(session.flipped?term.definition:term.term)}', '${session.flipped?'vi-VN':'en-US'}')" title="Read aloud"><img src="img/volume-2.png" class="theme-icon"></span></div>
+            <div class="fc-head"><span>Hint</span><span onclick="event.stopPropagation(); speak('${escapeAttr(session.flipped?term.definition:term.term)}', 'en-US')" title="Read aloud"><img src="img/volume-2.png" class="theme-icon"></span></div>
             <div class="fc-face ${session.flipped?'def':''}">${session.flipped ? escapeHtml(term.definition||'(no definition yet)') : escapeHtml(term.term)}</div>
             <div class="fc-foot"><img src="img/keyboard.png" class="theme-icon"> Press <kbd>Space</kbd> or click to flip · Swipe right = Known, swipe left = Still learning</div>
           </div>

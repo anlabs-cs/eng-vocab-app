@@ -61,7 +61,7 @@ function renderDetail(){
 
         <div class="preview-card">
           <div class="preview-hint">
-            <span onclick="event.stopPropagation(); speak('${escapeAttr(previewFlipped?(s.terms[previewIndex].definition||''):s.terms[previewIndex].term)}', '${previewFlipped?'vi-VN':'en-US'}')" title="Read aloud"><img src="img/volume-2.png" class="theme-icon"></span>
+            <span onclick="event.stopPropagation(); speak('${escapeAttr(previewFlipped?(s.terms[previewIndex].definition||''):s.terms[previewIndex].term)}', 'en-US')" title="Read aloud"><img src="img/volume-2.png" class="theme-icon"></span>
           </div>
           <div class="preview-face ${previewFlipped?'def':''}" onclick="togglePreviewFlip()">${previewFlipped ? escapeHtml(s.terms[previewIndex].definition||'(no definition)') : escapeHtml(s.terms[previewIndex].term)}</div>
           <div class="preview-footer"><span><img src="img/keyboard.png" class="theme-icon"></span> Press <kbd>Space</kbd> or click on the card to flip</div>
