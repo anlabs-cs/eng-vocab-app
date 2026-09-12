@@ -42,7 +42,7 @@ function topNav(showBack){
   return `
     <div class="topnav">
       <div class="brand" onclick="go('home')">
-        <span>Quizlet</span>
+        <span>EngVocab</span>
       </div>
       <div class="spacer"></div>
       ${fileStatusHtml()}

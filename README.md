@@ -4,6 +4,17 @@
 
 Trải nghiệm trực tiếp tại đây: [Quizlet](https://anlabs-cs.github.io/eng-vocab-app/)
 
+## Ảnh chụp màn hình
+
+| Danh sách bộ từ | Flashcards |
+|---|---|
+| ![Trang chủ](/img/screenshots/Home.jpeg) | ![Flashcards](/img/screenshots/Flashcard.jpeg) |
+
+| Chế độ Learn | Chế độ Test |
+|---|---|
+| ![Learn](/img/screenshots/Learn.jpeg) | ![Test](/img/screenshots/Test.jpeg) |
+
+
 ## Tính năng
 
 - Quản lý bộ từ vựng: tạo, chỉnh sửa, xoá các bộ từ (set), thêm/sửa/xoá từng thẻ từ (thuật ngữ + định nghĩa).
