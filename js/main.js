@@ -28,11 +28,11 @@ document.addEventListener('keydown', (e)=>{
       id: uid(),
       title: 'Sample Vocabulary',
       terms: [
-        {id:uid(), term:'accommodation', definition:'a place to live or stay'},
-        {id:uid(), term:'priority', definition:'something treated as more important than other things'},
-        {id:uid(), term:'advantage', definition:'a condition that puts you in a favorable position'},
-        {id:uid(), term:'competition', definition:'a contest between rivals'},
-        {id:uid(), term:'interesting', definition:'holding your attention or curiosity'}
+        {id:uid(), term:'accommodation', definition:'Chỗ ở'},
+        {id:uid(), term:'priority', definition:'Sự ưu tiên'},
+        {id:uid(), term:'advantage', definition:'Lợi thế'},
+        {id:uid(), term:'competition', definition:'Cuộc thi'},
+        {id:uid(), term:'interesting', definition:'Thú vị'}
       ]
     });
     saveSetsLocal(SETS);
