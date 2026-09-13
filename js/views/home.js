@@ -46,7 +46,7 @@ function topNav(showBack){
       </div>
       <div class="spacer"></div>
       ${fileStatusHtml()}
-      <button class="icon-btn" title="${currentTheme()==='light'?'Switch to dark mode':'Switch to light mode'}" onclick="toggleTheme()">${currentTheme()==='light'?'<img src="img/moon.png" class="theme-icon">':'<img src="img/sun.png" class="theme-icon">'}</button>
+      <button class="icon-btn" title="${currentTheme()==='light'?'Switch to dark mode':'Switch to light mode'}" onclick="toggleTheme()">${currentTheme()==='light'?'<img src="img/icon/moon.png" class="theme-icon">':'<img src="img/icon/sun.png" class="theme-icon">'}</button>
     </div>
   `;
 }
@@ -70,7 +70,7 @@ function setCardHtml(s){
       </div>
       <div style="display:flex;align-items:center;gap:6px;">
         <button class="del" onclick="event.stopPropagation(); deleteSet('${s.id}')">Delete</button>
-        <span class="arrow"><img src="img/chevron-right.png" class="theme-icon"></span>
+        <span class="arrow"><img src="img/icon/chevron-right.png" class="theme-icon"></span>
       </div>
     </div>
   `;
@@ -163,10 +163,10 @@ function renderHome(){
           <div class="search-box">
             <input type="text" id="homeSearchInput" placeholder="Search flashcards"
               value="${escapeAttr(homeSearchQuery)}" oninput="setSearchQuery(this.value)">
-            <span class="search-icon"><img src="img/search.png" class="theme-icon"></span>
+            <span class="search-icon"><img src="img/icon/search.png" class="theme-icon"></span>
           </div>
         </div>
-      <button class="icon-btn wide" title="Create" onclick="createNewSet()"><img src="img/plus.png" class="theme-icon"> Create a new list</button>
+      <button class="icon-btn wide" title="Create" onclick="createNewSet()"><img src="img/icon/plus.png" class="theme-icon"> Create a new list</button>
       <p>
       ` : ''}
 

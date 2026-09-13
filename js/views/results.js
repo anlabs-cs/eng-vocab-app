@@ -43,7 +43,7 @@ function renderResults(){
             return `
               <div style="margin-top:6px; padding-top:6px; border-top:1px dashed var(--border);">
                 <span style="color:var(--text);">${escapeHtml(t.term)}</span>
-                <span style="color:var(--text-dim);"> <img src="img/arrow-right.png" class="theme-icon"> </span>
+                <span style="color:var(--text-dim);"> <img src="img/icon/arrow-right.png" class="theme-icon"> </span>
                 <span style="color:${rowCorrect?'var(--green)':'var(--red)'};">${escapeHtml(userDef ? userDef.text : '(not matched)')}</span>
                 ${!rowCorrect ? `<div style="color:var(--text-dim);">Correct answer: <strong style="color:var(--text);">${escapeHtml(t.definition)}</strong></div>` : ''}
               </div>

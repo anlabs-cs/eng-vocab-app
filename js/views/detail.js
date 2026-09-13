@@ -25,16 +25,16 @@ function renderDetail(){
       <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
         <h1 class="set-title" style="margin-bottom:14px;">${escapeHtml(s.title)}</h1>
         <div class="icon-btn-row">
-          <button class="icon-btn round-btn" title="${s.starred?'Unsave':'Save set'}" onclick="toggleStarSet('${s.id}')">${s.starred?'<img src="img/star2.png" class="theme-icon theme-icon-color">':'<img src="img/star1.png" class="theme-icon">'}</button>
-          <button class="icon-btn round-btn" title="Share" onclick="shareSet('${s.id}')"><img src="img/share-2.png" class="theme-icon"></button>
+          <button class="icon-btn round-btn" title="${s.starred?'Unsave':'Save set'}" onclick="toggleStarSet('${s.id}')">${s.starred?'<img src="img/icon/star2.png" class="theme-icon theme-icon-color">':'<img src="img/icon/star1.png" class="theme-icon">'}</button>
+          <button class="icon-btn round-btn" title="Share" onclick="shareSet('${s.id}')"><img src="img/icon/share-2.png" class="theme-icon"></button>
           <div style="position:relative;">
-            <button class="icon-btn round-btn" title="More" onclick="toggleDetailMenu(event)"><img src="img/menu.png" class="theme-icon"></button>
+            <button class="icon-btn round-btn" title="More" onclick="toggleDetailMenu(event)"><img src="img/icon/menu.png" class="theme-icon"></button>
             ${detailMenuOpen ? `
               <div class="dropdown-menu" onclick="event.stopPropagation()">
                 <button onclick="closeDetailMenu(); go('editor')"><span>Edit set</span></button>
                 <button onclick="closeDetailMenu(); duplicateSet('${s.id}')"><span>Duplicate</span></button>
                 <button onclick="closeDetailMenu(); printSet('${s.id}')"><span>Print</span></button>
-                <button onclick="closeDetailMenu(); exportSetJson('${s.id}')"><img src="img/download.png" class="theme-icon"><span>Export .json</span></button>
+                <button onclick="closeDetailMenu(); exportSetJson('${s.id}')"><img src="img/icon/download.png" class="theme-icon"><span>Export .json</span></button>
                 <button class="danger" onclick="closeDetailMenu(); deleteSetFromDetail('${s.id}')"><span>Delete</span></button>
               </div>
             ` : ''}
@@ -61,14 +61,14 @@ function renderDetail(){
 
         <div class="preview-card">
           <div class="preview-hint">
-            <span onclick="event.stopPropagation(); speak('${escapeAttr(previewFlipped?(s.terms[previewIndex].definition||''):s.terms[previewIndex].term)}', 'en-US')" title="Read aloud"><img src="img/volume-2.png" class="theme-icon"></span>
+            <span onclick="event.stopPropagation(); speak('${escapeAttr(previewFlipped?(s.terms[previewIndex].definition||''):s.terms[previewIndex].term)}', 'en-US')" title="Read aloud"><img src="img/icon/volume-2.png" class="theme-icon"></span>
           </div>
           <div class="preview-face ${previewFlipped?'def':''}" onclick="togglePreviewFlip()">${previewFlipped ? escapeHtml(s.terms[previewIndex].definition||'(no definition)') : escapeHtml(s.terms[previewIndex].term)}</div>
-          <div class="preview-footer"><span><img src="img/keyboard.png" class="theme-icon"></span> Press <kbd>Space</kbd> or click on the card to flip</div>
+          <div class="preview-footer"><span><img src="img/icon/keyboard.png" class="theme-icon"></span> Press <kbd>Space</kbd> or click on the card to flip</div>
           <div class="preview-nav">
-            <button class="fc-nav" title="Previous" onclick="previewPrev()"><img src="img/chevron-left.png" class="theme-icon"></button>
+            <button class="fc-nav" title="Previous" onclick="previewPrev()"><img src="img/icon/chevron-left.png" class="theme-icon"></button>
             <span class="preview-count">${previewIndex+1} / ${s.terms.length}</span>
-            <button class="fc-nav" title="Next" onclick="previewNext()"><img src="img/chevron-right.png" class="theme-icon"></button>
+            <button class="fc-nav" title="Next" onclick="previewNext()"><img src="img/icon/chevron-right.png" class="theme-icon"></button>
           </div>
         </div>
         <div class="mode-tabs">
@@ -207,8 +207,8 @@ function termRowHtml(t){
           <input type="text" class="term-edit-input" id="editDefInput_${t.id}" value="${escapeAttr(t.definition)}" placeholder="Definition">
         </div>
         <div class="term-row-icons">
-          <button class="icon-btn round-btn small" title="Save" onclick="saveInlineEdit('${t.id}')"><img src="img/check.png" class="theme-icon"></button>
-          <button class="icon-btn round-btn small" title="Cancel" onclick="cancelInlineEdit()"><img src="img/x.png" class="theme-icon"></button>
+          <button class="icon-btn round-btn small" title="Save" onclick="saveInlineEdit('${t.id}')"><img src="img/icon/check.png" class="theme-icon"></button>
+          <button class="icon-btn round-btn small" title="Cancel" onclick="cancelInlineEdit()"><img src="img/icon/x.png" class="theme-icon"></button>
         </div>
       </div>
     `;
@@ -216,9 +216,9 @@ function termRowHtml(t){
   return `
     <div class="term-row">
       <div class="term-row-icons">
-        <button class="icon-btn round-btn small" title="${t.starred?'Unstar':'Star as important'}" onclick="toggleStarTerm('${t.id}')">${t.starred?'<img src="img/star2.png" class="theme-icon theme-icon-color">':'<img src="img/star1.png" class="theme-icon">'}</button>
-        <button class="icon-btn round-btn small" title="Read aloud" onclick="speak('${escapeAttr(t.term)}','en-US')"><img src="img/volume-2.png" class="theme-icon"></button>
-        <button class="icon-btn round-btn small" title="Edit" onclick="startInlineEdit('${t.id}')"><img src="img/pencil.png" class="theme-icon"></button>
+        <button class="icon-btn round-btn small" title="${t.starred?'Unstar':'Star as important'}" onclick="toggleStarTerm('${t.id}')">${t.starred?'<img src="img/icon/star2.png" class="theme-icon theme-icon-color">':'<img src="img/icon/star1.png" class="theme-icon">'}</button>
+        <button class="icon-btn round-btn small" title="Read aloud" onclick="speak('${escapeAttr(t.term)}','en-US')"><img src="img/icon/volume-2.png" class="theme-icon"></button>
+        <button class="icon-btn round-btn small" title="Edit" onclick="startInlineEdit('${t.id}')"><img src="img/icon/pencil.png" class="theme-icon"></button>
       </div>
       <div class="term-row-content">
         <div class="t">${escapeHtml(t.term)} ${t.mastered?'<span class="mastered-tag">✓ Know</span>':''}</div>
