@@ -70,6 +70,7 @@ function learnBuildQueue(s, settings){
 
 function renderLearn(){
   const s = getSet(currentSetId);
+  if(!s){ go('home'); return; }
   if(!session.settings){
     session.settings = defaultLearnSettings();
   }

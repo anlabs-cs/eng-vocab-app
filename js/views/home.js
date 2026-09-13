@@ -34,7 +34,7 @@ function fileStatusHtml(){
   }
   return `
     <button class="btn-ghost" onclick="connectExistingFile()" title="Choose an existing .json file to save/load data">Open file .json</button>
-    <button class="btn-ghost" onclick="createNewFile()" title="Create a new local .json file to save data">New file</button>
+    <button class="btn-ghost" onclick="createNewFile()" title="Create a new local .json file to save data">Export</button>
   `;
 }
 
@@ -47,7 +47,6 @@ function topNav(showBack){
       <div class="spacer"></div>
       ${fileStatusHtml()}
       <button class="icon-btn" title="${currentTheme()==='light'?'Switch to dark mode':'Switch to light mode'}" onclick="toggleTheme()">${currentTheme()==='light'?'<img src="img/moon.png" class="theme-icon">':'<img src="img/sun.png" class="theme-icon">'}</button>
-      <button class="icon-btn" title="Create" onclick="createNewSet()"><img src="img/plus.png" class="theme-icon"></button>
     </div>
   `;
 }
@@ -167,6 +166,8 @@ function renderHome(){
             <span class="search-icon"><img src="img/search.png" class="theme-icon"></span>
           </div>
         </div>
+      <button class="icon-btn wide" title="Create" onclick="createNewSet()"><img src="img/plus.png" class="theme-icon"> Create a new list</button>
+      <p>
       ` : ''}
 
       ${bodyHtml}

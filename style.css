@@ -145,6 +145,17 @@ button {
   cursor: pointer;
   font-size: 20px;
 }
+/* Nút "+ Create a new list" cần giãn theo chữ, không phải hình tròn cố định */
+.icon-btn.wide {
+  width: auto;
+  height: auto;
+  border-radius: 20px;
+  padding: 10px 20px;
+  white-space: nowrap;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 16px;
+}
 
 .icon-btn:hover {
   background: var(--panel-2);

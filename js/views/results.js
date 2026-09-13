@@ -3,6 +3,7 @@
 ========================================================= */
 function renderResults(){
   const s = getSet(currentSetId);
+  if(!s){ go('home'); return; }
   let title, scoreLine, stats, retryFn, reviewHtml='';
 
   if(session.mode==='flashcards'){

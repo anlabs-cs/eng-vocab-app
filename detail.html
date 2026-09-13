@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="./img/icon-512.png">
-    <title>EngVocab</title>
+    <title>EngVocab - Set</title>
 
     <link rel="preconnect" href="./font/font-times-new-roman.ttf">
     <link rel="preconnect" href="./font/font-times-new-roman.ttf" crossorigin>
@@ -25,11 +25,13 @@
     <script src="js/progress.js"></script>
     <script src="js/helpers.js"></script>
 
-    <!-- Views: home.js also holds the shared top nav / render dispatcher used by every page -->
+    <!-- home.js holds the shared top nav / render dispatcher used by every page -->
     <script src="js/views/home.js"></script>
+    <script src="js/views/detail.js"></script>
+    <script src="js/views/editor.js"></script>
 
     <!-- App bootstrap (must load last) -->
-    <script>window.DEFAULT_VIEW = 'home';</script>
+    <script>window.DEFAULT_VIEW = 'detail';</script>
     <script src="js/main.js"></script>
 </body>
 

@@ -21,6 +21,7 @@ document.addEventListener('keydown', (e)=>{
    INIT
 ========================================================= */
 (async function init(){
+  initPage(window.DEFAULT_VIEW || 'home');
   if(SETS.length===0){
     // seed a starter example set so the app isn't empty on first run
     SETS.push({

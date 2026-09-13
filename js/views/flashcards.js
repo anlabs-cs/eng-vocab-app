@@ -3,6 +3,7 @@
 ========================================================= */
 function renderFlashcards(){
   const s = getSet(currentSetId);
+  if(!s){ go('home'); return; }
   if(!session.order){
     session.shuffleOn = false;
     session.order = s.terms.map(t=>t.id);

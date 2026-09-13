@@ -3,6 +3,7 @@
 ========================================================= */
 function renderTestSetup(){
   const s = getSet(currentSetId);
+  if(!s){ go('home'); return; }
   const starredCount = s.terms.filter(t=>t.starred).length;
   const max = s.terms.length;
   if(!session.testConfig){
