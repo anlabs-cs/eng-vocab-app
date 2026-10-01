@@ -21,6 +21,15 @@ document.addEventListener('keydown', (e)=>{
    INIT
 ========================================================= */
 (async function init(){
+  // Register Service Worker for PWA
+  if ('serviceWorker' in navigator) {
+    try {
+      await navigator.serviceWorker.register('./sw.js');
+    } catch (e) {
+      console.log('Service Worker registration failed: ', e);
+    }
+  }
+
   initPage(window.DEFAULT_VIEW || 'home');
   if(SETS.length===0){
     // seed a starter example set so the app isn't empty on first run

@@ -1,0 +1,16 @@
+{
+  "name": "Eng Vocab",
+  "short_name": "EngVocab",
+  "description": "Ứng dụng học từ vựng tiếng Anh chạy trên trình duyệt, không cần backend.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4255ff",
+  "icons": [
+    {
+      "src": "./img/icon/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
