@@ -39,12 +39,15 @@ function fileStatusHtml(){
 }
 
 function topNav(showBack){
+  // show install button if prompt is available
+  const showInstall = window.deferredPrompt ? 'inline-block' : 'none';
   return `
     <div class="topnav">
       <div class="brand" onclick="go('home')">
         <span>EngVocab</span>
       </div>
       <div class="spacer"></div>
+      <button id="installAppBtn" class="btn-primary" style="display:${showInstall}; margin-right:8px;" onclick="installPWA()">⬇ Cài App</button>
       ${fileStatusHtml()}
       <button class="icon-btn" title="${currentTheme()==='light'?'Switch to dark mode':'Switch to light mode'}" onclick="toggleTheme()">${currentTheme()==='light'?'<img src="img/icon/moon.png" class="theme-icon">':'<img src="img/icon/sun.png" class="theme-icon">'}</button>
     </div>

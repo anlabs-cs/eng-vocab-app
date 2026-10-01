@@ -17,6 +17,27 @@ document.addEventListener('keydown', (e)=>{
   }
 });
 
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const installBtn = document.getElementById('installAppBtn');
+  if(installBtn) installBtn.style.display = 'inline-block';
+});
+
+window.installPWA = function() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === 'accepted') {
+        const installBtn = document.getElementById('installAppBtn');
+        if(installBtn) installBtn.style.display = 'none';
+      }
+      deferredPrompt = null;
+    });
+  }
+};
+
 /* =========================================================
    INIT
 ========================================================= */
