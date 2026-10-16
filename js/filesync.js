@@ -118,7 +118,7 @@ async function reconnectFile(){
       if(text.trim()) SETS = parseSetsPayload(text);
       saveSetsLocal(SETS);
       fileSyncStatus = 'connected';
-      currentSetId = SETS[0] ? SETS[0].id : currentSetId;
+      if(!getSet(currentSetId)) currentSetId = SETS[0] ? SETS[0].id : null;
       go('home');
     }catch(e){
       console.error(e);
@@ -127,7 +127,12 @@ async function reconnectFile(){
   }
 }
 
-async function writeCurrentDataToFile(){
+let pendingWrite = Promise.resolve();
+function writeCurrentDataToFile(){
+  pendingWrite = pendingWrite.then(doWriteFile);
+  return pendingWrite;
+}
+async function doWriteFile(){
   if(!fileHandle) return;
   try{
     fileSyncStatus = 'saving';
@@ -155,7 +160,7 @@ async function tryAutoReconnect(){
       if(text.trim()) SETS = parseSetsPayload(text);
       saveSetsLocal(SETS);
       fileSyncStatus = 'connected';
-      currentSetId = SETS[0] ? SETS[0].id : null;
+      if(!getSet(currentSetId)) currentSetId = SETS[0] ? SETS[0].id : null;
       render();
     } else {
       fileSyncStatus = 'needs-permission';
@@ -183,17 +188,15 @@ function importJsonFallbackTrigger(){
 function importJsonFallbackChange(evt){
   const file = evt.target.files[0];
   if(!file) return;
-  if(SETS.length>0){
-    const ok = confirm('Importing this file will replace the currently displayed data. Continue?');
-    if(!ok){ evt.target.value=''; return; }
-  }
   const reader = new FileReader();
   reader.onload = ()=>{
     try{
-      SETS = parseSetsPayload(reader.result);
-      saveSetsLocal(SETS);
-      fileName = file.name;
-      currentSetId = SETS[0] ? SETS[0].id : null;
+      const incoming = parseSetsPayload(reader.result);
+      const have = new Set(SETS.map(s=>s.id));
+      const fresh = incoming.filter(s=>s && s.id && Array.isArray(s.terms) && !have.has(s.id));
+      SETS = fresh.concat(SETS); // merge: keep existing sets, add new ones
+      saveSets(SETS);
+      alert('Imported '+fresh.length+' new set(s); '+(incoming.length-fresh.length)+' skipped (already exist).');
       go('home');
     }catch(e){ alert('Invalid JSON file.'); }
   };

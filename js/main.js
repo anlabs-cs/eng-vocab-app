@@ -21,6 +21,7 @@ let deferredPrompt;
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
+  window.deferredPrompt = e;
   const installBtn = document.getElementById('installAppBtn');
   if(installBtn) installBtn.style.display = 'inline-block';
 });
@@ -33,7 +34,7 @@ window.installPWA = function() {
         const installBtn = document.getElementById('installAppBtn');
         if(installBtn) installBtn.style.display = 'none';
       }
-      deferredPrompt = null;
+      deferredPrompt = null; window.deferredPrompt = null;
     });
   }
 };

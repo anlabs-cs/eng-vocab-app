@@ -18,7 +18,8 @@ function learnPlayBeep(correct){
   try{
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if(!AudioCtx) return;
-    const ctx = new AudioCtx();
+    const ctx = window._learnAudioCtx || (window._learnAudioCtx = new AudioCtx());
+    if(ctx.state === 'suspended') ctx.resume();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = 'sine';
@@ -32,8 +33,8 @@ function learnPlayBeep(correct){
 }
 
 function learnNormalize(str, lenient){
-  let v = (str||'').trim().toLowerCase();
-  if(lenient) v = v.replace(/[^\w\s]/g,'').replace(/\s+/g,' ').trim();
+  let v = (str||'').normalize('NFC').trim().toLowerCase();
+  if(lenient) v = v.replace(/[^\p{L}\p{N}\s]/gu,'').replace(/\s+/g,' ').trim();
   return v;
 }
 
@@ -111,7 +112,7 @@ function renderLearn(){
           if(opt===q.correct) cls+=' correct';
           else if(opt===session.selected) cls+=' wrong';
         }
-        return `<button class="${cls}" ${session.answered?'disabled':''} onclick="learnAnswer(${JSON.stringify(opt).replace(/"/g,'&quot;')})">
+        return `<button class="${cls}" ${session.answered?'disabled':''} onclick="learnAnswer(${jsArg(opt)})">
           <span class="idx">${i+1}</span><span>${escapeHtml(opt||'(empty)')}</span>
         </button>`;
       }).join('')}
@@ -147,7 +148,7 @@ function renderLearn(){
           </div>
 
           <div class="learn-card">
-            <div class="learn-label">${q.answerWithTerm?'Definition':'Term'}<span onclick="speak('${escapeAttr(q.term.term)}','en-US')" style="cursor:pointer;" title="Read aloud">🔊</span></div>
+            <div class="learn-label">${q.answerWithTerm?'Definition':'Term'}<span onclick="speak(${jsArg(q.term.term)},'en-US')" style="cursor:pointer;" title="Read aloud">🔊</span></div>
             <div class="learn-term">${escapeHtml(q.answerWithTerm ? q.term.definition : q.term.term)}</div>
             <div class="learn-label" style="margin-bottom:10px;">${q.options?'Choose an answer':(q.answerWithTerm?'Type the term':'Type the definition')}</div>
             ${bodyHtml}
@@ -374,7 +375,8 @@ function learnSubmitWritten(){
   session.selected = val;
   session.answered = true;
   const normVal = learnNormalize(val, lenient);
-  session.wasCorrect = normVal.length>0 && normVal === learnNormalize(q.correct, lenient);
+  const normCorrect = learnNormalize(q.correct, lenient);
+  session.wasCorrect = normVal === normCorrect;
   session.totalAnswered++;
   if(session.wasCorrect) session.correctCount++;
   if(session.settings.soundEffects) learnPlayBeep(session.wasCorrect);

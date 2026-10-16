@@ -35,9 +35,9 @@ function renderFlashcards(){
           </div>
 
           <div class="flip-card" id="flipCardEl">
-            <div class="fc-head"><span>Hint</span><span onclick="event.stopPropagation(); speak('${escapeAttr(session.flipped?term.definition:term.term)}', 'en-US')" title="Read aloud"><img src="img/icon/volume-2.png" class="theme-icon"></span></div>
+            <div class="fc-head"><span>Hint</span><span onclick="event.stopPropagation(); speak(${jsArg(session.flipped?term.definition:term.term)}, 'en-US')" title="Read aloud"><img src="img/icon/volume-2.png" class="theme-icon"></span></div>
             <div class="fc-face ${session.flipped?'def':''}">${session.flipped ? escapeHtml(term.definition||'(no definition yet)') : escapeHtml(term.term)}</div>
-            <div class="fc-foot"><img src="img/icon/keyboard.png" class="theme-icon"> Press <kbd>Space</kbd> or click to flip. <kbd>?</kbd> / <kbd>?</kbd> to mark</div>
+            <div class="fc-foot"><img src="img/icon/keyboard.png" class="theme-icon"> Press <kbd>Space</kbd> or click to flip. <kbd>←</kbd> / <kbd>→</kbd> to mark</div>
           </div>
 
           <div class="fc-bottom-row">
@@ -112,6 +112,9 @@ function fcAttachSwipe(){
     fcFlip();
   }
 
+  if(window._fcMove) window.removeEventListener('mousemove', window._fcMove);
+  if(window._fcUp) window.removeEventListener('mouseup', window._fcUp);
+  window._fcMove = onMove; window._fcUp = onUp;
   el.addEventListener('mousedown', onDown);
   el.addEventListener('touchstart', onDown, {passive:true});
   window.addEventListener('mousemove', onMove);

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'engvocab-cache-v1';
+const CACHE_NAME = 'engvocab-cache-v2';
 const PRECACHE_URLS = [
   './',
   './index.html',
@@ -21,7 +21,34 @@ const PRECACHE_URLS = [
   './js/views/learn.js',
   './js/views/test.js',
   './js/views/results.js',
-  './font/font-times-new-roman.ttf'
+  './img/icon/arrow-right-left.png',
+  './img/icon/arrow-right.png',
+  './img/icon/check.png',
+  './img/icon/chevron-down.png',
+  './img/icon/chevron-left.png',
+  './img/icon/chevron-right.png',
+  './img/icon/chevron-up.png',
+  './img/icon/clipboard-list.png',
+  './img/icon/download.png',
+  './img/icon/icon-512.png',
+  './img/icon/import.png',
+  './img/icon/keyboard.png',
+  './img/icon/lightbulb.png',
+  './img/icon/menu.png',
+  './img/icon/moon.png',
+  './img/icon/pencil.png',
+  './img/icon/plus.png',
+  './img/icon/rotate-ccw.png',
+  './img/icon/search.png',
+  './img/icon/settings.png',
+  './img/icon/share-2.png',
+  './img/icon/shuffle.png',
+  './img/icon/star1.png',
+  './img/icon/star2.png',
+  './img/icon/sun.png',
+  './img/icon/undo.png',
+  './img/icon/volume-2.png',
+  './img/icon/x.png'
 ];
 
 self.addEventListener('install', event => {
@@ -47,30 +74,18 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  // Ignore non-GET requests and requests that aren't for the same origin
   if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) {
     return;
   }
 
+  // Network first so code changes show up right away; fall back to cache when offline.
   event.respondWith(
-    caches.match(event.request).then(cachedResponse => {
-      if (cachedResponse) {
-        return cachedResponse;
+    fetch(event.request).then(response => {
+      if (response && response.status === 200 && response.type === 'basic') {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
       }
-      
-      // If not in cache, fetch from network and cache it
-      return fetch(event.request).then(response => {
-        if (!response || response.status !== 200 || response.type !== 'basic') {
-          return response;
-        }
-        
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME).then(cache => {
-          cache.put(event.request, responseToCache);
-        });
-        
-        return response;
-      });
-    })
+      return response;
+    }).catch(() => caches.match(event.request, { ignoreSearch: true }))
   );
 });

@@ -214,7 +214,7 @@ function renderTest(){
     } else if(q.type==='mc'){
       body = `<div class="choices">
         ${q.options.map((opt,oi)=>`
-          <button class="choice ${q.userAnswer===opt?'sel':''}" style="${q.userAnswer===opt?'border-color:var(--accent);':''}" onclick="setMcAnswer(${i}, ${JSON.stringify(opt).replace(/"/g,'&quot;')})">
+          <button class="choice ${q.userAnswer===opt?'sel':''}" style="${q.userAnswer===opt?'border-color:var(--accent);':''}" onclick="setMcAnswer(${i}, ${jsArg(opt)})">
             <span class="idx">${oi+1}</span><span>${escapeHtml(opt||'(empty)')}</span>
           </button>
         `).join('')}
@@ -344,8 +344,8 @@ function setMcAnswer(i, val){ session.testQuestions[i].userAnswer = val; renderT
 function setWrittenAnswer(i, val){ session.testQuestions[i].userAnswer = val; }
 
 function normalizeAnswer(str, lenient){
-  let v = (str||'').trim().toLowerCase();
-  if(lenient) v = v.replace(/[^\w\s]/g,'').replace(/\s+/g,' ').trim();
+  let v = (str||'').normalize('NFC').trim().toLowerCase();
+  if(lenient) v = v.replace(/[^\p{L}\p{N}\s]/gu,'').replace(/\s+/g,' ').trim();
   return v;
 }
 
@@ -373,7 +373,7 @@ function submitTest(){
     else if(q.type==='mc') isCorrect = (q.userAnswer===(q.answerWithTerm?q.term.term:q.term.definition));
     else if(q.type==='written'){
       const target = q.answerWithTerm ? q.term.term : q.term.definition;
-      isCorrect = normalizeAnswer(q.userAnswer, lenient) === normalizeAnswer(target, lenient) && normalizeAnswer(q.userAnswer,lenient).length>0;
+      isCorrect = normalizeAnswer(q.userAnswer, lenient) === normalizeAnswer(target, lenient);
     }
     q.isCorrect = isCorrect;
     totalGraded++;

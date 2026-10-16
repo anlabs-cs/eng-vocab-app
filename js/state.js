@@ -87,7 +87,9 @@ function go(v, extra){
     if(currentSetId){ try{ localStorage.setItem(CURRENT_SET_KEY, currentSetId); }catch(e){} }
     const url = new URL(targetPage, location.href);
     if(currentSetId) url.searchParams.set('set', currentSetId);
-    location.href = url.toString();
+    const target = url.toString();
+    if(typeof pendingWrite !== 'undefined') pendingWrite.finally(()=>{ location.href = target; });
+    else location.href = target;
     return;
   }
 

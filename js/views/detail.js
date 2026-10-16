@@ -61,7 +61,7 @@ function renderDetail(){
 
         <div class="preview-card">
           <div class="preview-hint">
-            <span onclick="event.stopPropagation(); speak('${escapeAttr(previewFlipped?(s.terms[previewIndex].definition||''):s.terms[previewIndex].term)}', 'en-US')" title="Read aloud"><img src="img/icon/volume-2.png" class="theme-icon"></span>
+            <span onclick="event.stopPropagation(); speak(${jsArg(previewFlipped?(s.terms[previewIndex].definition||''):s.terms[previewIndex].term)}, 'en-US')" title="Read aloud"><img src="img/icon/volume-2.png" class="theme-icon"></span>
           </div>
           <div class="preview-face ${previewFlipped?'def':''}" onclick="togglePreviewFlip()">${previewFlipped ? escapeHtml(s.terms[previewIndex].definition||'(no definition)') : escapeHtml(s.terms[previewIndex].term)}</div>
           <div class="preview-footer"><span><img src="img/icon/keyboard.png" class="theme-icon"></span> Press <kbd>Space</kbd> or click on the card to flip</div>
@@ -115,7 +115,7 @@ function shareSet(id){
   if(!s) return;
   const payload = JSON.stringify([s], null, 2);
   if(navigator.share){
-    navigator.share({title:s.title, text:`Vocabulary set "${s.title}" (${s.terms.length} terms)`}).catch(()=>{});
+    navigator.share({title:s.title, text:payload}).catch(()=>{});
     return;
   }
   if(navigator.clipboard && navigator.clipboard.writeText){
@@ -217,7 +217,7 @@ function termRowHtml(t){
     <div class="term-row">
       <div class="term-row-icons">
         <button class="icon-btn round-btn small" title="${t.starred?'Unstar':'Star as important'}" onclick="toggleStarTerm('${t.id}')">${t.starred?'<img src="img/icon/star2.png" class="theme-icon theme-icon-color">':'<img src="img/icon/star1.png" class="theme-icon">'}</button>
-        <button class="icon-btn round-btn small" title="Read aloud" onclick="speak('${escapeAttr(t.term)}','en-US')"><img src="img/icon/volume-2.png" class="theme-icon"></button>
+        <button class="icon-btn round-btn small" title="Read aloud" onclick="speak(${jsArg(t.term)},'en-US')"><img src="img/icon/volume-2.png" class="theme-icon"></button>
         <button class="icon-btn round-btn small" title="Edit" onclick="startInlineEdit('${t.id}')"><img src="img/icon/pencil.png" class="theme-icon"></button>
       </div>
       <div class="term-row-content">

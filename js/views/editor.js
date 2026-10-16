@@ -130,11 +130,12 @@ function syncEditorFieldsToModel() {
   const rows = document.querySelectorAll('#rowsContainer .editor-row');
   if (rows.length) {
     const terms = [];
+    const oldTerms = Object.fromEntries(s.terms.map(t => [t.id, t]));
     rows.forEach(row => {
       const id = row.getAttribute('data-id');
       const term = row.querySelector('.term-input').value;
       const def = row.querySelector('.def-input').value;
-      terms.push({ id, term, definition: def });
+      terms.push(Object.assign({}, oldTerms[id], { id, term, definition: def }));
     });
     s.terms = terms;
   }
@@ -191,11 +192,12 @@ function collectEditorData() {
   const s = getSet(currentSetId);
   const rows = document.querySelectorAll('#rowsContainer .editor-row');
   const terms = [];
+  const oldTerms = Object.fromEntries(s.terms.map(t => [t.id, t]));
   rows.forEach(row => {
     const id = row.getAttribute('data-id');
     const term = row.querySelector('.term-input').value.trim();
     const def = row.querySelector('.def-input').value.trim();
-    if (term || def) terms.push({ id, term, definition: def });
+    if (term || def) terms.push(Object.assign({}, oldTerms[id], { id, term, definition: def }));
   });
   s.title = document.getElementById('setTitleInput').value.trim() || 'Untitled set';
   s.terms = terms;
