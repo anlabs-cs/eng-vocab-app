@@ -11,15 +11,12 @@ function setCardHtml(s){
   const displayTitle = s.title && s.title.trim() ? escapeHtml(s.title) : '(Draft)';
   return `
     <div class="set-card" onclick="openSet('${s.id}')">
-      <div style="flex:1;">
+      <div class="set-card-main">
         <div class="name">${displayTitle}</div>
-        <div class="meta">${s.terms.length} Cards ${due ? `· <span class="due-tag">${due} to review</span>` : ''}</div>
+        <div class="meta">${s.terms.length} term${s.terms.length===1?'':'s'}${s.terms.length ? ` · ${ms.pct}% known` : ''}${due ? ` · <span class="due-tag">${due} to review</span>` : ''}</div>
         ${s.terms.length ? `<div class="mini-progress"><div class="mini-progress-fill" style="width:${ms.pct}%"></div></div>` : ''}
       </div>
-      <div style="display:flex;align-items:center;gap:6px;">
-        <button class="del" onclick="event.stopPropagation(); deleteSet('${s.id}')">Delete</button>
-        <span class="arrow"><img src="img/icon/chevron-right.png" class="theme-icon"></span>
-      </div>
+      <button class="del" title="Delete set" aria-label="Delete set" onclick="event.stopPropagation(); deleteSet('${s.id}')"><img src="img/icon/x.png" class="theme-icon" alt=""></button>
     </div>
   `;
 }
@@ -71,8 +68,8 @@ function renderHome(){
     bodyHtml = `
       <div class="empty-state">
         <div class="big">No sets yet</div>
-        <div>Create your first flashcard set to get started</div>
-        <div style="margin-top:20px;"><button class="btn-primary" onclick="createNewSet()">＋ Create</button></div>
+        <div>Create a set, or import one from Data.</div>
+        <div style="margin-top:20px;"><button class="btn-primary" onclick="createNewSet()">Create a set</button></div>
       </div>
     `;
   } else if(filtered.length===0){
@@ -98,31 +95,66 @@ function renderHome(){
   root.innerHTML = `
     ${topNav()}
     <div class="page">
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-        <h1 class="set-title" style="margin-bottom:0;">Your library</h1>
-        ${streak.current>0 ? `<div class="streak-badge" title="Study streak">🔥 ${streak.current} day streak</div>` : ''}
-      </div>
-      ${dueTotal>0 ? `<div class="due-banner">📅 <strong>${dueTotal}</strong> term${dueTotal>1?'s':''} due for review today — open a set marked “to review”.</div>` : ''}
+      ${SETS.length>0 ? todayHtml(streak, dueTotal) : ''}
 
-      ${SETS.length>0 ? `
+      <div class="section-head">
+        <h2 class="section-title">Sets</h2>
+        <button class="btn-ghost" onclick="createNewSet()">+ New set</button>
+      </div>
+
+      ${SETS.length>1 ? `
         <div class="home-toolbar">
-          <select class="sort-select" onchange="setSortMode(this.value)">
-            <option value="recent" ${homeSortMode==='recent'?'selected':''}>Recent</option>
-            <option value="title" ${homeSortMode==='title'?'selected':''}>Title (A-Z)</option>
-          </select>
           <div class="search-box">
-            <input type="text" id="homeSearchInput" placeholder="Search flashcards"
+            <img src="img/icon/search.png" class="theme-icon search-icon" alt="">
+            <input type="text" id="homeSearchInput" placeholder="Search sets"
               value="${escapeAttr(homeSearchQuery)}" oninput="setSearchQuery(this.value)">
-            <span class="search-icon"><img src="img/icon/search.png" class="theme-icon"></span>
           </div>
+          <select class="sort-select" onchange="setSortMode(this.value)" aria-label="Sort sets">
+            <option value="recent" ${homeSortMode==='recent'?'selected':''}>Recent</option>
+            <option value="title" ${homeSortMode==='title'?'selected':''}>A–Z</option>
+          </select>
         </div>
-      <button class="icon-btn wide" title="Create" onclick="createNewSet()"><img src="img/icon/plus.png" class="theme-icon"> Create a new list</button>
-      <p>
       ` : ''}
 
       ${bodyHtml}
     </div>
   `;
+}
+
+/* "Today" block: what to review now, across all sets */
+function todayHtml(streak, dueTotal){
+  const dueSets = SETS.map(s=>({s, n:dueTermIds(s).length})).filter(x=>x.n>0).sort((a,b)=>b.n-a.n);
+  const streakText = streak.current>0
+    ? `${streak.current}-day streak${streak.longest>streak.current ? ` · best ${streak.longest}` : ''}`
+    : 'Study today to start a streak';
+  return `
+    <section class="today">
+      <div class="today-head">
+        <h1 class="today-title">Today</h1>
+        <span class="today-streak">${streakText}</span>
+      </div>
+      ${dueTotal>0 ? `
+        <p class="today-lead"><strong>${dueTotal}</strong> term${dueTotal>1?'s':''} to review.</p>
+        <ul class="today-list">
+          ${dueSets.map(({s,n})=>`
+            <li>
+              <button class="today-row" onclick="reviewSet('${s.id}')">
+                <span class="today-set">${escapeHtml(s.title || '(Untitled)')}</span>
+                <span class="today-count">${n}</span>
+                <span class="today-go">Review →</span>
+              </button>
+            </li>`).join('')}
+        </ul>
+      ` : `<p class="today-lead">Nothing to review right now. Learn something new below.</p>`}
+    </section>
+  `;
+}
+
+function reviewSet(id){
+  const s = getSet(id);
+  if(!s) return;
+  currentSetId = id;
+  go('learn', {onlyIds: dueTermIds(s), reviewLabel: 'Review'});
 }
 
 function setSearchQuery(val){

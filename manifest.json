@@ -4,8 +4,8 @@
   "description": "Ứng dụng học từ vựng tiếng Anh chạy trên trình duyệt, không cần backend.",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#4255ff",
+  "background_color": "#f4efe4",
+  "theme_color": "#f4efe4",
   "icons": [
     {
       "src": "./img/icon/icon-512.png",

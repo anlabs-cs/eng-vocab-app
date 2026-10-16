@@ -32,7 +32,7 @@ function fileStatusHtml(){
     return `<button class="btn-primary nav-file" onclick="reconnectFile()" title="Allow access to your .json file again">Reconnect .json</button>`;
   }
   if(fileSyncStatus==='error'){
-    return `<button class="btn-ghost nav-file" style="color:var(--red);" onclick="connectExistingFile()" title="Failed to save file, try again">Save failed</button>`;
+    return `<button class="btn-ghost nav-file" style="color:var(--bad);" onclick="connectExistingFile()" title="Failed to save file, try again">Save failed</button>`;
   }
   return '';
 }
@@ -82,11 +82,9 @@ function topNav(){
   const showInstall = window.deferredPrompt ? 'inline-block' : 'none';
   return `
     <div class="topnav">
-      <div class="brand" onclick="go('home')">
-        <span>EngVocab</span>
-      </div>
+      <div class="brand" onclick="go('home')">EngVocab</div>
       <div class="spacer"></div>
-      <button id="installAppBtn" class="btn-primary" style="display:${showInstall};" onclick="installPWA()">⬇ Cài App</button>
+      <button id="installAppBtn" class="btn-ghost" style="display:${showInstall};" onclick="installPWA()">Install app</button>
       ${fileStatusHtml()}
       <button class="btn-ghost" title="Backup, restore, import, file sync" onclick="openDataMenu()">Data</button>
       <button class="icon-btn" title="${currentTheme()==='light'?'Switch to dark mode':'Switch to light mode'}" onclick="toggleTheme()">${currentTheme()==='light'?'<img src="img/icon/moon.png" class="theme-icon">':'<img src="img/icon/sun.png" class="theme-icon">'}</button>

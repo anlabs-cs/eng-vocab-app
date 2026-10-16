@@ -46,7 +46,7 @@ function renderFlashcards(){
           </div>
 
           <div class="flip-card" id="flipCardEl">
-            <div class="fc-head"><span>Hint</span><span onclick="event.stopPropagation(); speak(${jsArg(session.flipped?term.definition:term.term)}, 'en-US')" title="Read aloud"><img src="img/icon/volume-2.png" class="theme-icon"></span></div>
+            <div class="fc-head"><span></span><span onclick="event.stopPropagation(); speak(${jsArg(session.flipped?term.definition:term.term)}, 'en-US')" title="Read aloud"><img src="img/icon/volume-2.png" class="theme-icon"></span></div>
             <div class="fc-face ${session.flipped?'def':''}">${session.flipped ? backFaceHtml(term, '(no definition yet)') : frontFaceHtml(term)}</div>
             <div class="fc-foot"><img src="img/icon/keyboard.png" class="theme-icon"> Press <kbd>Space</kbd> or click to flip. <kbd>←</kbd> / <kbd>→</kbd> to mark</div>
           </div>

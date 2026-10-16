@@ -15,7 +15,6 @@ function renderTestSetup(){
       matching: false,
       written: false,
       answerWith: 'definition',   // 'definition' | 'term'
-      showImages: true,
       grading: 'exact'            // 'exact' | 'lenient'
     };
   }
@@ -29,7 +28,7 @@ function renderTestSetup(){
         <h2>Options</h2>
 
         <div class="modal-row">
-          <span>Questions <span style="color:var(--text-dim); font-weight:400;">(max ${poolSize||1})</span></span>
+          <span>Questions <span style="color:var(--ink-3); font-weight:400;">(max ${poolSize||1})</span></span>
           <input type="number" class="num-input" id="qCount" min="1" max="${poolSize||1}" value="${Math.min(cfg.count, poolSize||1)}">
         </div>
 
@@ -73,10 +72,6 @@ function renderTestSetup(){
                 <option value="both" ${cfg.answerWith==='both'?'selected':''}>Mix both</option>
               </select>
             </div>
-            <div class="modal-row">
-              <span>Show images with</span>
-              <button class="switch ${cfg.showImages?'on':''}" onclick="toggleTestOpt('showImages', this)"><span class="knob"></span></button>
-            </div>
           </div>
         ` : ''}
 
@@ -101,7 +96,7 @@ function renderTestSetup(){
         </div>
 
         <div class="modal-footer-row">
-          <a class="modal-row-link" href="#" onclick="return false;">Privacy Policy</a>
+          <span></span>
           <button class="btn-ghost" onclick="go('detail')">Cancel</button>
         </div>
       </div>
@@ -205,7 +200,7 @@ function renderTest(){
     let body='';
     if(q.type==='tf'){
       body = `
-        <div style="margin-bottom:12px; color:var(--text-dim);">${q.answerWithTerm?'Term':'Definition'}: <strong style="color:var(--text);">${escapeHtml(q.shownDef)}</strong></div>
+        <div style="margin-bottom:12px; color:var(--ink-3);">${q.answerWithTerm?'Term':'Definition'}: <strong style="color:var(--ink);">${escapeHtml(q.shownDef)}</strong></div>
         <div class="tf-row">
           <div class="tf-choice ${q.userAnswer===true?'sel':''}" onclick="setTfAnswer(${i}, true)">True</div>
           <div class="tf-choice ${q.userAnswer===false?'sel':''}" onclick="setTfAnswer(${i}, false)">False</div>
@@ -290,7 +285,7 @@ function renderMatchingBody(q, qi){
   return `
     <div class="matching-rows">${rows}</div>
     <div class="matching-bank-label"></div>
-    <div class="matching-bank">${bankHtml || '<span style="color:var(--text-dim);">All matched</span>'}</div>
+    <div class="matching-bank">${bankHtml || '<span style="color:var(--ink-3);">All matched</span>'}</div>
   `;
 }
 

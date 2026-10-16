@@ -151,7 +151,7 @@ function renderLearn(){
           </div>
 
           <div class="learn-card">
-            <div class="learn-label">${q.answerWithTerm?'Definition':'Term'}<span onclick="speak(${jsArg(q.term.term)},'en-US')" style="cursor:pointer;" title="Read aloud">🔊</span></div>
+            <div class="learn-label">${q.answerWithTerm?'Definition':'Term'}<button class="icon-btn small" onclick="speak(${jsArg(q.term.term)},'en-US')" title="Read aloud"><img src="img/icon/volume-2.png" class="theme-icon" alt="Read aloud"></button></div>
             <div class="learn-term">${escapeHtml(q.answerWithTerm ? q.term.definition : q.term.term)}</div>
             ${!q.answerWithTerm && (q.term.pos || q.term.phonetic) ? `<div class="face-meta" style="margin:-8px 0 16px;">${q.term.pos?`<span class="pos-tag">${escapeHtml(q.term.pos)}</span>`:''} ${q.term.phonetic?`<span class="phonetic">${escapeHtml(q.term.phonetic)}</span>`:''}</div>` : ''}
             <div class="learn-label" style="margin-bottom:10px;">${q.options?'Choose an answer':(q.answerWithTerm?'Type the term':'Type the definition')}</div>
@@ -270,12 +270,8 @@ function learnSettingsModalHtml(){
           <span class="modal-row-link">Start <span><img src="img/icon/chevron-right.png" class="theme-icon"></span></span>
         </div>
 
-        <div class="modal-row">
-          <a class="modal-row-link" href="#" onclick="return false;">Privacy Policy</a>
-        </div>
-
         <div class="modal-footer-row">
-          <button class="link-btn" style="color:var(--red);" onclick="learnRestart()">Restart Learn</button>
+          <button class="link-btn" style="color:var(--bad);" onclick="learnRestart()">Restart Learn</button>
           <div style="display:flex; gap:10px;">
             <button class="btn-ghost" onclick="learnCloseSettings()">Cancel</button>
             <button class="btn-primary" onclick="learnSaveSettings()">Save</button>

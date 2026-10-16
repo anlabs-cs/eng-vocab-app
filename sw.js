@@ -1,4 +1,4 @@
-const CACHE_NAME = 'engvocab-cache-v3';
+const CACHE_NAME = 'engvocab-cache-v4';
 const PRECACHE_URLS = [
   './',
   './index.html',
@@ -80,8 +80,13 @@ self.addEventListener('fetch', event => {
   }
 
   // Network first so code changes show up right away; fall back to cache when offline.
+  // cache:'no-cache' revalidates with the server (cheap 304) instead of trusting the
+  // browser's heuristic HTTP cache, which can otherwise serve stale JS for days.
+  const fresh = event.request.mode === 'navigate'
+    ? new Request(event.request.url, { cache: 'no-cache', credentials: 'same-origin' })
+    : new Request(event.request, { cache: 'no-cache' });
   event.respondWith(
-    fetch(event.request).then(response => {
+    fetch(fresh).then(response => {
       if (response && response.status === 200 && response.type === 'basic') {
         const copy = response.clone();
         caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));

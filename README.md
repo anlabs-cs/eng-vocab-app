@@ -47,11 +47,11 @@ Nếu bạn tải mã nguồn gốc `.zip` về máy, bạn nên chạy ứng d�
 
 | Danh sách bộ từ | Flashcards |
 |---|---|
-| ![Trang chủ](img/screenshots/Home.jpeg) | ![Flashcards](img/screenshots/Flashcard.jpeg) |
+| ![Trang chủ](img/screenshots/Home.png) | ![Flashcards](img/screenshots/Flashcard.png) |
 
 | Chế độ Learn | Chế độ Test |
 |---|---|
-| ![Learn](img/screenshots/Learn.jpeg) | ![Test](img/screenshots/Test.jpeg) |
+| ![Learn](img/screenshots/Learn.png) | ![Test](img/screenshots/Test.png) |
 
 ## 🛠 Tech Stack
 - Frontend: HTML5, CSS3, Vanilla JavaScript.

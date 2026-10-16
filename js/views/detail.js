@@ -47,10 +47,10 @@ function renderDetail(){
       ${s.terms.length>0 ? `
         <div class="mastery-bar-wrap">
           <div class="mastery-bar-head">
-            <span>${ms.mastered}/${ms.total}</span>
+            <span>${ms.mastered} of ${ms.total} known</span>
             <span>${ms.pct}%</span>
           </div>
-          <div class="progress-track" style="margin:0;"><div class="progress-fill" style="width:${ms.pct}%; background:var(--green);"></div></div>
+          <div class="progress-track" style="margin:0;"><div class="progress-fill" style="width:${ms.pct}%; background:var(--good);"></div></div>
         </div>
       ` : ''}
 
@@ -75,12 +75,12 @@ function renderDetail(){
         </div>
         ${dueIds.length ? `
           <button class="review-due-btn" onclick="startDueReview()">
-            📅 Review ${dueIds.length} due term${dueIds.length>1?'s':''} <img src="img/icon/arrow-right.png" class="theme-icon">
+            <span>Review ${dueIds.length} due term${dueIds.length>1?'s':''}</span><span class="review-due-go">Start →</span>
           </button>` : ''}
         <div class="mode-tabs">
-          <div class="mode-tab" onclick="go('flashcards')"><span class="ic"></span> Flashcards</div>
-          <div class="mode-tab" onclick="go('learn')"><span class="ic"></span> Learn</div>
-          <div class="mode-tab" onclick="go('test-setup')"><span class="ic"></span> Test</div>
+          <div class="mode-tab" onclick="go('flashcards')">Flashcards</div>
+          <div class="mode-tab" onclick="go('learn')">Learn</div>
+          <div class="mode-tab" onclick="go('test-setup')">Test</div>
         </div>
         <div class="term-section">
           <div class="term-list-header sticky-bar">

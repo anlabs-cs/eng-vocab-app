@@ -1,15 +1,17 @@
 /* =========================================================
-   THEME (light / dark)
-   Uses CSS variables in style.css: :root (dark, default) and
-   :root[data-theme="light"] (light overrides). This file only
-   toggles the attribute and remembers the choice.
+   THEME (light "paper" / dark)
+   Uses CSS variables in style.css: :root is the light paper
+   theme, :root[data-theme="dark"] overrides it. First visit
+   follows the system setting; the toggle remembers a choice.
 ========================================================= */
 const THEME_KEY = 'vocabapp_theme_v1';
 
 function loadTheme(){
   try{
-    return localStorage.getItem(THEME_KEY) || 'dark';
-  }catch(e){ return 'dark'; }
+    const saved = localStorage.getItem(THEME_KEY);
+    if(saved) return saved;
+  }catch(e){}
+  return window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 function applyTheme(theme){
