@@ -23,7 +23,7 @@ function renderDetail(){
   root.innerHTML = `
     ${topNav()}
     <div class="page">
-      <div class="crumb"><a onclick="go('home')">Your library</a> <span>/</span></div>
+      <div class="crumb"><a onclick="go('home')">← Library</a></div>
       <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
         <h1 class="set-title" style="margin-bottom:14px;">${escapeHtml(s.title)}</h1>
         <div class="icon-btn-row">

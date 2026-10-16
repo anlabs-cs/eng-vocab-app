@@ -9,7 +9,7 @@ function renderEditor() {
   root.innerHTML = `
     ${topNav()}
     <div class="page">
-      <div class="crumb"><a onclick="go('home')">Vocabulary</a> <span>/</span> <a onclick="go('detail')">${escapeHtml(s.title)}</a></div>
+      <div class="crumb"><a onclick="go('detail')">← ${escapeHtml(s.title || 'Back')}</a></div>
       <input class="title-input" id="setTitleInput" value="${escapeAttr(s.title)}" placeholder="Enter a title">
 
       <button class="toggle-link" onclick="toggleImport()" id="importToggle"><img src="img/icon/import.png" class="theme-icon"> Paste a list or load a file to import quickly</button>
