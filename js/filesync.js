@@ -46,12 +46,17 @@ async function verifyPermission(handle){
   return false;
 }
 
-function parseSetsPayload(text){
+/* Accepts every format we have ever written: a bare array (v1),
+   {sets:[...]} (v2 file / backup). Always returns migrated sets. */
+function parseDataPayload(text){
   const parsed = JSON.parse(text);
-  if(Array.isArray(parsed)) return parsed;
-  if(parsed && Array.isArray(parsed.sets)) return parsed.sets;
+  if(Array.isArray(parsed)) return { sets: migrateSets(parsed) };
+  if(parsed && Array.isArray(parsed.sets)){
+    return { sets: migrateSets(parsed.sets), streak: parsed.streak || null, version: parsed.version || 1 };
+  }
   throw new Error('unexpected shape');
 }
+function parseSetsPayload(text){ return parseDataPayload(text).sets; }
 
 async function useFileHandle(handle){
   const ok = await verifyPermission(handle);
@@ -137,7 +142,7 @@ async function doWriteFile(){
   try{
     fileSyncStatus = 'saving';
     const writable = await fileHandle.createWritable();
-    await writable.write(JSON.stringify(SETS, null, 2));
+    await writable.write(JSON.stringify(dataFilePayload(SETS), null, 2));
     await writable.close();
     fileSyncStatus = 'connected';
   }catch(e){
@@ -172,34 +177,70 @@ async function tryAutoReconnect(){
   }
 }
 
-/* ---- Fallback for browsers without File System Access API ---- */
-function exportJsonFallback(){
-  const blob = new Blob([JSON.stringify(SETS, null, 2)], {type:'application/json'});
+/* ---------------------------------------------------------
+   BACKUP / RESTORE / MERGE IMPORT (works in every browser)
+   - Backup: downloads the whole library + streak as one .json
+   - Import (merge): adds sets from a .json (a shared set, a friend's
+     library, an old backup) without touching what you already have
+   - Restore (replace): overwrites everything with a backup
+--------------------------------------------------------- */
+function downloadJson(obj, name){
+  const blob = new Blob([JSON.stringify(obj, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = (fileName || 'vocabulary') + (String(fileName).endsWith('.json')?'':'.json');
+  a.href = url; a.download = name;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
 }
-function importJsonFallbackTrigger(){
-  const el = document.getElementById('importFileInput');
+
+function downloadBackup(){
+  const payload = Object.assign(dataFilePayload(SETS), { streak: getStreak() });
+  downloadJson(payload, 'engvocab-backup-' + todayStr() + '.json');
+}
+
+/* Merge rule: a set whose id we don't have is added. A set we already have
+   gets any terms it is missing (by id); existing terms keep your progress. */
+function mergeSets(incoming){
+  let added = 0, updated = 0;
+  incoming.forEach(inc=>{
+    const mine = getSet(inc.id);
+    if(!mine){ SETS.unshift(inc); added++; return; }
+    const have = new Set(mine.terms.map(t=>t.id));
+    const extra = inc.terms.filter(t=>!have.has(t.id));
+    if(extra.length){ mine.terms = mine.terms.concat(extra); updated++; }
+  });
+  return {added, updated};
+}
+
+let pendingImportMode = 'merge';
+function pickDataFile(mode){
+  pendingImportMode = mode;
+  const el = document.getElementById('dataFileInput');
   if(el) el.click();
 }
-function importJsonFallbackChange(evt){
+function onDataFilePicked(evt){
   const file = evt.target.files[0];
+  evt.target.value = '';
   if(!file) return;
   const reader = new FileReader();
   reader.onload = ()=>{
-    try{
-      const incoming = parseSetsPayload(reader.result);
-      const have = new Set(SETS.map(s=>s.id));
-      const fresh = incoming.filter(s=>s && s.id && Array.isArray(s.terms) && !have.has(s.id));
-      SETS = fresh.concat(SETS); // merge: keep existing sets, add new ones
+    let data;
+    try{ data = parseDataPayload(reader.result); }
+    catch(e){ alert('This file is not a valid EngVocab .json file.'); return; }
+    if(pendingImportMode === 'replace'){
+      if(!confirm('Replace ALL your sets with the ' + data.sets.length + ' set(s) in this backup? This cannot be undone.')) return;
+      SETS = data.sets;
+      if(data.streak) saveStreak(data.streak);
+      if(!getSet(currentSetId)) currentSetId = SETS[0] ? SETS[0].id : null;
       saveSets(SETS);
-      alert('Imported '+fresh.length+' new set(s); '+(incoming.length-fresh.length)+' skipped (already exist).');
-      go('home');
-    }catch(e){ alert('Invalid JSON file.'); }
+      alert('Restored ' + SETS.length + ' set(s).');
+    } else {
+      const r = mergeSets(data.sets);
+      saveSets(SETS);
+      alert('Added ' + r.added + ' new set(s)' + (r.updated ? ', added new terms to ' + r.updated + ' existing set(s)' : '') + '.');
+    }
+    closeDataMenu();
+    go('home');
   };
   reader.readAsText(file);
-  evt.target.value = '';
 }

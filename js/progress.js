@@ -30,13 +30,70 @@ function recordStudyActivity(){
 }
 function getStreak(){ return loadStreak(); }
 
+/* ---------------------------------------------------------
+   SPACED REPETITION (Leitner boxes)
+   Each studied term has box 0..6 and a due date (YYYY-MM-DD).
+   Correct answer on a due term -> next box, due again after
+   SRS_INTERVALS[box] days. Wrong answer -> box 0, due today.
+   Answering a term correctly again before it is due does not
+   push it further (no cheating by repeating a set 5x a day).
+--------------------------------------------------------- */
+const SRS_INTERVALS = [0, 1, 2, 4, 8, 16, 32]; // days, indexed by box
+const SRS_MAX_BOX = SRS_INTERVALS.length - 1;
+
+function addDays(dateStr, n){
+  const [y,m,d] = dateStr.split('-').map(Number);
+  return todayStr(new Date(y, m-1, d + n));
+}
+function isTermDue(t, today){
+  return !!t.due && t.due <= (today || todayStr());
+}
+function srsSchedule(t, correct){
+  const today = todayStr();
+  const box = Number.isInteger(t.box) ? t.box : 0;
+  if(!correct){
+    t.box = 0;
+    t.due = today;
+  } else if(!t.due || t.due <= today){
+    t.box = Math.min(box + 1, SRS_MAX_BOX);
+    t.due = addDays(today, SRS_INTERVALS[t.box]);
+  }
+  t.lastReviewed = today;
+}
+
+function termSnapshot(t){
+  return { mastered: t.mastered, box: t.box, due: t.due, lastReviewed: t.lastReviewed };
+}
+
+/* Record one answer for a term: updates "Know" flag + SRS schedule.
+   Returns the term's previous state so callers (flashcard Undo) can restore it. */
 function setTermMastery(setId, termId, mastered){
   const s = getSet(setId);
-  if(!s) return;
+  if(!s) return null;
   const t = s.terms.find(x=>x.id===termId);
-  if(!t) return;
+  if(!t) return null;
+  const prev = termSnapshot(t);
   t.mastered = !!mastered;
+  srsSchedule(t, !!mastered);
   saveSets(SETS);
+  return prev;
+}
+function restoreTermState(setId, termId, snap){
+  const s = getSet(setId);
+  const t = s && s.terms.find(x=>x.id===termId);
+  if(!t || !snap) return;
+  for(const k of ['mastered','box','due','lastReviewed']){
+    if(snap[k] === undefined) delete t[k]; else t[k] = snap[k];
+  }
+  saveSets(SETS);
+}
+
+function dueTermIds(s){
+  const today = todayStr();
+  return s.terms.filter(t=>isTermDue(t, today)).map(t=>t.id);
+}
+function totalDueCount(){
+  return SETS.reduce((n,s)=>n + dueTermIds(s).length, 0);
 }
 function setMasteryStats(s){
   const total = s.terms.length;

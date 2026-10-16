@@ -1,4 +1,4 @@
-const CACHE_NAME = 'engvocab-cache-v2';
+const CACHE_NAME = 'engvocab-cache-v3';
 const PRECACHE_URLS = [
   './',
   './index.html',
@@ -13,6 +13,7 @@ const PRECACHE_URLS = [
   './js/filesync.js',
   './js/progress.js',
   './js/helpers.js',
+  './js/layout.js',
   './js/main.js',
   './js/views/home.js',
   './js/views/detail.js',

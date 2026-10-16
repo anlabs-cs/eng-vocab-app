@@ -1,60 +1,4 @@
 /* =========================================================
-   RENDER ROOT
-========================================================= */
-function render(){
-  if(view==='home') return renderHome();
-  if(view==='detail') return renderDetail();
-  if(view==='editor') return renderEditor();
-  if(view==='flashcards') return renderFlashcards();
-  if(view==='learn') return renderLearn();
-  if(view==='test-setup') return renderTestSetup();
-  if(view==='test') return renderTest();
-  if(view==='results') return renderResults();
-}
-
-function fileStatusHtml(){
-  if(!FS_SUPPORTED){
-    return `
-      <button class="btn-ghost" onclick="exportJsonFallback()" title="Download all your data as a .json file">Download .json</button>
-      <button class="btn-ghost" onclick="importJsonFallbackTrigger()" title="Load data from a .json file">Import .json</button>
-      <input type="file" id="importFileInput" accept=".json,application/json" style="display:none" onchange="importJsonFallbackChange(event)">
-    `;
-  }
-  if(fileSyncStatus==='connected'){
-    return `<button class="btn-ghost" title="Switch to a different file" onclick="connectExistingFile()">.json</button>`;
-  }
-  if(fileSyncStatus==='saving'){
-    return `<button class="btn-ghost" disabled>Saving...</button>`;
-  }
-  if(fileSyncStatus==='needs-permission'){
-    return `<button class="btn-primary" onclick="reconnectFile()">.json</button>`;
-  }
-  if(fileSyncStatus==='error'){
-    return `<button class="btn-ghost" style="color:var(--red);" onclick="connectExistingFile()" title="Failed to save file, try again">Save failed</button>`;
-  }
-  return `
-    <button class="btn-ghost" onclick="connectExistingFile()" title="Choose an existing .json file to save/load data">Open file .json</button>
-    <button class="btn-ghost" onclick="createNewFile()" title="Create a new local .json file to save data">Export</button>
-  `;
-}
-
-function topNav(showBack){
-  // show install button if prompt is available
-  const showInstall = window.deferredPrompt ? 'inline-block' : 'none';
-  return `
-    <div class="topnav">
-      <div class="brand" onclick="go('home')">
-        <span>EngVocab</span>
-      </div>
-      <div class="spacer"></div>
-      <button id="installAppBtn" class="btn-primary" style="display:${showInstall}; margin-right:8px;" onclick="installPWA()">⬇ Cài App</button>
-      ${fileStatusHtml()}
-      <button class="icon-btn" title="${currentTheme()==='light'?'Switch to dark mode':'Switch to light mode'}" onclick="toggleTheme()">${currentTheme()==='light'?'<img src="img/icon/moon.png" class="theme-icon">':'<img src="img/icon/sun.png" class="theme-icon">'}</button>
-    </div>
-  `;
-}
-
-/* =========================================================
    HOME VIEW
    Search + "Recent" sort + history grouped by time
 ========================================================= */
@@ -63,12 +7,13 @@ let homeSortMode = 'recent'; // 'recent' | 'title'
 
 function setCardHtml(s){
   const ms = setMasteryStats(s);
+  const due = dueTermIds(s).length;
   const displayTitle = s.title && s.title.trim() ? escapeHtml(s.title) : '(Draft)';
   return `
     <div class="set-card" onclick="openSet('${s.id}')">
       <div style="flex:1;">
         <div class="name">${displayTitle}</div>
-        <div class="meta">${s.terms.length} Cards ${s.terms.length ? `· by you` : ''}</div>
+        <div class="meta">${s.terms.length} Cards ${due ? `· <span class="due-tag">${due} to review</span>` : ''}</div>
         ${s.terms.length ? `<div class="mini-progress"><div class="mini-progress-fill" style="width:${ms.pct}%"></div></div>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:6px;">
@@ -117,6 +62,7 @@ function groupSetsByRecency(sets){
 
 function renderHome(){
   const streak = getStreak();
+  const dueTotal = totalDueCount();
   const q = homeSearchQuery.trim().toLowerCase();
   const filtered = SETS.filter(s => !q || (s.title||'').toLowerCase().includes(q));
 
@@ -156,6 +102,7 @@ function renderHome(){
         <h1 class="set-title" style="margin-bottom:0;">Your library</h1>
         ${streak.current>0 ? `<div class="streak-badge" title="Study streak">🔥 ${streak.current} day streak</div>` : ''}
       </div>
+      ${dueTotal>0 ? `<div class="due-banner">📅 <strong>${dueTotal}</strong> term${dueTotal>1?'s':''} due for review today — open a set marked “to review”.</div>` : ''}
 
       ${SETS.length>0 ? `
         <div class="home-toolbar">

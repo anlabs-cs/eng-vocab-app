@@ -12,16 +12,23 @@ function renderEditor() {
       <div class="crumb"><a onclick="go('home')">Vocabulary</a> <span>/</span> <a onclick="go('detail')">${escapeHtml(s.title)}</a></div>
       <input class="title-input" id="setTitleInput" value="${escapeAttr(s.title)}" placeholder="Enter a title">
 
-      <button class="toggle-link" onclick="toggleImport()" id="importToggle"><img src="img/icon/import.png" class="theme-icon"> Paste a list to import quickly</button>
+      <button class="toggle-link" onclick="toggleImport()" id="importToggle"><img src="img/icon/import.png" class="theme-icon"> Paste a list or load a file to import quickly</button>
       <div id="importBox" class="hidden" style="margin-top:12px;">
-        <textarea class="import-box" id="importText" placeholder="accommodation - a place to live or stay
-priority	high importance
+        <textarea class="import-box" id="importText" placeholder="accommodation - chỗ ở, nơi ở
+priority	sự ưu tiên	Safety is our top priority.	n.	/praɪˈɒrəti/
 
-One term per line, separate term and definition with a dash ( - ) or Tab."></textarea>
-        <div style="display:flex; gap:10px; margin-top:10px;">
+One term per line: term - definition (also :, =, or comma),
+or Tab / CSV columns: term, definition, example, word type, phonetic."></textarea>
+        <label class="import-option">
+          <input type="checkbox" id="importAutoTranslate" checked> Auto-fill empty definitions (English → Vietnamese, needs Internet)
+        </label>
+        <div class="import-actions">
           <button class="btn-primary" onclick="applyImport()">Import list</button>
+          <button class="btn-ghost" onclick="document.getElementById('importFileInput').click()">Load .txt / .csv / .tsv file…</button>
           <button class="btn-ghost" onclick="toggleImport()">Cancel</button>
+          <input type="file" id="importFileInput" accept=".txt,.csv,.tsv,text/plain,text/csv" style="display:none" onchange="loadImportFile(event)">
         </div>
+        <div id="importStatus" class="import-status"></div>
       </div>
 
       <div id="rowsContainer" style="margin-top:24px;">
@@ -38,19 +45,39 @@ One term per line, separate term and definition with a dash ( - ) or Tab."></tex
 }
 
 function editorRowHtml(t, i) {
+  const hasExtra = !!(t.pos || t.phonetic || t.example);
   return `
-    <div class="editor-row" data-id="${t.id}">
+    <div class="editor-row ${hasExtra ? 'show-extra' : ''}" data-id="${t.id}">
       <div class="num">${i + 1}</div>
-      <div class="editor-col">
-        <span class="field-label">Term</span>
-        <input type="text" class="term-input" value="${escapeAttr(t.term)}" placeholder="e.g. accommodation">
+      <div class="editor-fields">
+        <div class="editor-main">
+          <div class="editor-col">
+            <span class="field-label">Term</span>
+            <input type="text" class="term-input" value="${escapeAttr(t.term)}" placeholder="e.g. accommodation">
+          </div>
+          <div class="editor-col">
+            <span class="field-label">Definition</span>
+            <input type="text" class="def-input" value="${escapeAttr(t.definition)}" placeholder="e.g. chỗ ở" onfocus="suggestDefinition('${t.id}')">
+            <div class="def-suggestion" id="sugg-${t.id}"></div>
+          </div>
+        </div>
+        <button class="extra-toggle" onclick="this.closest('.editor-row').classList.add('show-extra')">+ Example, word type, phonetic</button>
+        <div class="editor-extra">
+          <div class="editor-col extra-small">
+            <span class="field-label">Word type</span>
+            <input type="text" class="pos-input" value="${escapeAttr(t.pos || '')}" placeholder="n. / v. / adj.">
+          </div>
+          <div class="editor-col extra-small">
+            <span class="field-label">Phonetic</span>
+            <input type="text" class="phonetic-input" value="${escapeAttr(t.phonetic || '')}" placeholder="/əˌkɒməˈdeɪʃn/">
+          </div>
+          <div class="editor-col">
+            <span class="field-label">Example</span>
+            <input type="text" class="example-input" value="${escapeAttr(t.example || '')}" placeholder="e.g. The price includes accommodation.">
+          </div>
+        </div>
       </div>
-      <div class="editor-col">
-        <span class="field-label">Definition</span>
-        <input type="text" class="def-input" value="${escapeAttr(t.definition)}" placeholder="e.g. a place to live or stay" onfocus="suggestDefinition('${t.id}')">
-        <div class="def-suggestion" id="sugg-${t.id}"></div>
-      </div>
-      <button class="rm" onclick="removeRow('${t.id}')"><img src="img/icon/x.png" class="theme-icon"></button>
+      <button class="rm" title="Remove" onclick="removeRow('${t.id}')"><img src="img/icon/x.png" class="theme-icon"></button>
     </div>
   `;
 }
@@ -63,6 +90,18 @@ function editorRowHtml(t, i) {
    never overwrites something the user already wrote.
 --------------------------------------------------------- */
 const _suggestCache = {}; // term (lowercased) -> translated text
+
+async function translateToVi(term) {
+  const cacheKey = term.toLowerCase();
+  if (_suggestCache[cacheKey]) return _suggestCache[cacheKey];
+  const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=' + encodeURIComponent(term);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('translate failed');
+  const data = await res.json();
+  const translated = (data[0] || []).map(seg => seg[0]).join('').trim();
+  if (translated) _suggestCache[cacheKey] = translated;
+  return translated;
+}
 
 async function suggestDefinition(rowId) {
   const row = document.querySelector(`.editor-row[data-id="${rowId}"]`);
@@ -78,24 +117,15 @@ async function suggestDefinition(rowId) {
     return;
   }
 
-  const cacheKey = term.toLowerCase();
-  if (_suggestCache[cacheKey]) {
-    renderSuggestionChip(suggBox, rowId, _suggestCache[cacheKey]);
-    return;
-  }
-
-  suggBox.innerHTML = `<span class="sugg-loading">Đang dịch...</span>`;
+  if (!_suggestCache[term.toLowerCase()]) suggBox.innerHTML = `<span class="sugg-loading">Đang dịch...</span>`;
   try {
-    const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=' + encodeURIComponent(term);
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('translate failed');
-    const data = await res.json();
-    const translated = (data[0] || []).map(seg => seg[0]).join('').trim();
+    const translated = await translateToVi(term);
     if (!translated) { suggBox.innerHTML = ''; return; }
-    _suggestCache[cacheKey] = translated;
     // make sure the field wasn't filled in / focus moved on while we waited
     if (document.activeElement === defInput && defInput.value.trim() === '') {
       renderSuggestionChip(suggBox, rowId, translated);
+    } else {
+      suggBox.innerHTML = '';
     }
   } catch (e) {
     suggBox.innerHTML = `<span class="sugg-error">Không thể gợi ý nghĩa</span>`;
@@ -118,6 +148,30 @@ function acceptSuggestion(rowId) {
   suggBox.innerHTML = '';
 }
 
+/* Read every editor row from the DOM. Fields the editor doesn't show
+   (starred, mastered, spaced-repetition box/due...) are carried over
+   from the existing term with the same id. */
+function readEditorRows(s, trim) {
+  const oldTerms = Object.fromEntries(s.terms.map(t => [t.id, t]));
+  const rows = document.querySelectorAll('#rowsContainer .editor-row');
+  const terms = [];
+  rows.forEach(row => {
+    const id = row.getAttribute('data-id');
+    const val = sel => { const v = row.querySelector(sel).value; return trim ? v.trim() : v; };
+    const t = Object.assign({}, oldTerms[id], {
+      id,
+      term: val('.term-input'),
+      definition: val('.def-input'),
+      pos: val('.pos-input'),
+      phonetic: val('.phonetic-input'),
+      example: val('.example-input')
+    });
+    for (const k of ['pos', 'phonetic', 'example']) if (!t[k].trim()) delete t[k];
+    terms.push(t);
+  });
+  return { rows, terms };
+}
+
 /* Sync whatever is currently typed in the form back into the in-memory
    model, WITHOUT filtering/defaulting anything — used before any action
    that triggers a re-render (add/remove row, import), so nothing typed
@@ -127,18 +181,8 @@ function syncEditorFieldsToModel() {
   if (!s) return;
   const titleEl = document.getElementById('setTitleInput');
   if (titleEl) s.title = titleEl.value;
-  const rows = document.querySelectorAll('#rowsContainer .editor-row');
-  if (rows.length) {
-    const terms = [];
-    const oldTerms = Object.fromEntries(s.terms.map(t => [t.id, t]));
-    rows.forEach(row => {
-      const id = row.getAttribute('data-id');
-      const term = row.querySelector('.term-input').value;
-      const def = row.querySelector('.def-input').value;
-      terms.push(Object.assign({}, oldTerms[id], { id, term, definition: def }));
-    });
-    s.terms = terms;
-  }
+  const { rows, terms } = readEditorRows(s, false);
+  if (rows.length) s.terms = terms;
 }
 
 function addRow() {
@@ -161,46 +205,76 @@ function toggleImport() {
   document.getElementById('importBox').classList.toggle('hidden');
 }
 
+let importIsCsv = false;
+function loadImportFile(evt) {
+  const file = evt.target.files[0];
+  evt.target.value = '';
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    importIsCsv = /\.csv$/i.test(file.name);
+    document.getElementById('importText').value = String(reader.result).replace(/^﻿/, '');
+    document.getElementById('importStatus').textContent = `Loaded ${file.name}. Check the list, then press "Import list".`;
+  };
+  reader.readAsText(file);
+}
+
 function applyImport() {
   const text = document.getElementById('importText').value;
   if (!text.trim()) return;
   syncEditorFieldsToModel();
   const s = getSet(currentSetId);
-  const newTerms = [];
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-  lines.forEach(line => {
-    let parts;
-    if (line.includes('\t')) parts = line.split('\t');
-    else if (line.includes(' - ')) parts = line.split(' - ');
-    else if (line.includes('\t')) parts = line.split('\t');
-    else if (line.includes(':')) parts = line.split(':');
-    else if (line.includes(',')) parts = line.split(',');
-    else parts = [line, ''];
-    const term = (parts[0] || '').trim();
-    const def = (parts.slice(1).join(' - ') || '').trim();
-    if (term) newTerms.push({ id: uid(), term, definition: def });
-  });
+  const newTerms = parseImportText(text, { csv: importIsCsv }).map(t => Object.assign({ id: uid() }, t));
+  importIsCsv = false;
+  if (!newTerms.length) { alert('No terms found in the pasted text.'); return; }
+  const autoTranslate = document.getElementById('importAutoTranslate').checked;
   // remove empty placeholder rows before merging
   s.terms = s.terms.filter(t => t.term.trim() !== '' || t.definition.trim() !== '');
   s.terms = s.terms.concat(newTerms);
   saveSets(SETS);
-  document.getElementById('importText').value = '';
   renderEditor();
+  const missing = newTerms.filter(t => !t.definition);
+  if (autoTranslate && missing.length) autoFillDefinitions(missing.map(t => t.id));
+}
+
+/* Fill empty Definition inputs of freshly imported rows, a few at a time.
+   Writes into the form only (user still presses "Save set"), and never
+   touches a field the user has typed into meanwhile. */
+async function autoFillDefinitions(ids) {
+  const banner = document.createElement('div');
+  banner.className = 'import-status floating';
+  document.body.appendChild(banner);
+  let done = 0, failed = 0;
+  const queue = ids.slice();
+  async function worker() {
+    while (queue.length && view === 'editor') {
+      const id = queue.shift();
+      const row = document.querySelector(`.editor-row[data-id="${id}"]`);
+      const termEl = row && row.querySelector('.term-input');
+      const defEl = row && row.querySelector('.def-input');
+      if (termEl && defEl && termEl.value.trim() && !defEl.value.trim()) {
+        try {
+          const tr = await translateToVi(termEl.value.trim());
+          if (tr && !defEl.value.trim()) defEl.value = tr;
+        } catch (e) { failed++; }
+      }
+      done++;
+      banner.textContent = `Translating definitions… ${done}/${ids.length}`;
+    }
+  }
+  banner.textContent = `Translating definitions… 0/${ids.length}`;
+  await Promise.all([worker(), worker(), worker()]);
+  banner.textContent = failed
+    ? `Done. ${failed} definition(s) could not be translated (offline?). Remember to press "Save set".`
+    : 'Definitions filled in. Review them, then press "Save set".';
+  setTimeout(() => banner.remove(), 5000);
 }
 
 function collectEditorData() {
   const s = getSet(currentSetId);
-  const rows = document.querySelectorAll('#rowsContainer .editor-row');
-  const terms = [];
-  const oldTerms = Object.fromEntries(s.terms.map(t => [t.id, t]));
-  rows.forEach(row => {
-    const id = row.getAttribute('data-id');
-    const term = row.querySelector('.term-input').value.trim();
-    const def = row.querySelector('.def-input').value.trim();
-    if (term || def) terms.push(Object.assign({}, oldTerms[id], { id, term, definition: def }));
-  });
+  const { terms } = readEditorRows(s, true);
   s.title = document.getElementById('setTitleInput').value.trim() || 'Untitled set';
-  s.terms = terms;
+  s.terms = terms.filter(t => t.term || t.definition);
 }
 
 function saveEditor() {

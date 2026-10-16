@@ -7,6 +7,16 @@ document.addEventListener('keydown', (e)=>{
     else if(e.key==='1'){ fcMark(false); }
     else if(e.key==='2' || e.key==='3'){ fcMark(true); }
   }
+  else if(view==='learn' && session.currentQ && !session.settingsOpen){
+    const typing = document.activeElement && document.activeElement.tagName === 'INPUT';
+    const q = session.currentQ;
+    if(!session.answered && q.options && !typing && /^[1-9]$/.test(e.key)){
+      const opt = q.options[Number(e.key) - 1];
+      if(opt !== undefined){ e.preventDefault(); learnAnswer(opt); }
+    }
+    else if(session.answered && e.key==='Enter' && !typing){ e.preventDefault(); learnNext(); }
+    else if(!session.answered && e.key==='?' && !typing){ learnDontKnow(); }
+  }
   else if(view==='detail'){
     const s = getSet(currentSetId);
     if(s && s.terms.length>0 && document.activeElement.tagName!=='INPUT'){

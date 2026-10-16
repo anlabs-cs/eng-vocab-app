@@ -4,10 +4,27 @@
 
 ## 🚀 Tính năng nổi bật
 - **Học tập chủ động:** Tạo bộ từ, học bằng flashcard, ôn luyện với chế độ Learn, làm bài kiểm tra và theo dõi chuỗi ngày học (streak).
-- **Hoạt động Offline 100% (PWA):** Có thể cài đặt ứng dụng thành phần mềm độc lập trên máy tính/điện thoại. Sau khi cài, ứng dụng hoạt động không cần mạng Internet.
-- **Bảo toàn dữ liệu (Backup):** Cho phép kết nối và lưu dữ liệu trực tiếp ra file `.json` trên máy tính (sử dụng *File System Access API*), không lo mất lịch sử học tập.
-- **Phát âm từ vựng:** Tích hợp sẵn *Web Speech API (Text-to-Speech)* đọc tiếng Anh chuẩn xác.
-- **Giao diện thân thiện:** Tối ưu hóa UI/UX, hỗ trợ Dark Mode và các phím tắt tiện dụng (Space lật thẻ, phím mũi tên đánh dấu từ...).
+- **Lặp lại ngắt quãng:** Mỗi từ có lịch ôn riêng (1 → 2 → 4 → 8 → 16 → 32 ngày; trả lời sai thì quay lại từ đầu). Trang chủ và trang bộ từ hiện số từ cần ôn hôm nay, bấm **Review** để ôn đúng những từ đó.
+- **Học lại từ sai:** Sau Flashcards / Learn / Test có nút học lại riêng các từ chưa thuộc hoặc làm sai.
+- **Thông tin từ đầy đủ:** Ngoài nghĩa, mỗi từ có thể có loại từ, phiên âm và câu ví dụ.
+- **Nhập nhanh:** Dán danh sách hoặc tải file `.txt` / `.csv` / `.tsv` (xuất từ Excel, Google Sheets, Anki), tự dịch nghĩa còn trống sang tiếng Việt.
+- **Hoạt động Offline (PWA):** Có thể cài đặt ứng dụng thành phần mềm độc lập trên máy tính/điện thoại. Sau khi cài, ứng dụng hoạt động không cần mạng Internet (trừ tính năng gợi ý nghĩa).
+- **Bảo toàn dữ liệu:** Nút **Data** cho phép tải bản sao lưu toàn bộ, khôi phục, gộp bộ từ bạn bè gửi mà không mất dữ liệu cũ, và (trên Chrome/Edge) tự động lưu mọi thay đổi vào một file `.json` trên máy.
+- **Phát âm từ vựng:** Tích hợp sẵn *Web Speech API (Text-to-Speech)* đọc tiếng Anh.
+- **Giao diện thân thiện:** Dark Mode, dùng tốt trên điện thoại, phím tắt (Flashcards: Space lật thẻ, ← / → đánh dấu; Learn: 1–4 chọn đáp án, Enter tiếp tục, ? không biết).
+
+## 📥 Định dạng nhập danh sách
+Mỗi dòng một từ:
+```
+accommodation - chỗ ở, nơi ở
+look up: tra cứu
+```
+Hoặc các cột cách nhau bằng Tab (dán từ Excel/Sheets) hay file CSV, theo thứ tự:
+`từ | nghĩa | câu ví dụ | loại từ | phiên âm` (chỉ 2 cột đầu là bắt buộc).
+
+## 🔄 Dùng chung dữ liệu trên nhiều máy
+Trên Chrome/Edge: **Data → Create new .json file** và lưu file vào thư mục Google Drive / OneDrive / Dropbox đã đồng bộ. Ở máy khác, chọn **Data → Open .json file** và mở cùng file đó. Chỉ nên mở app trên một máy tại một thời điểm.
+Để chia sẻ một bộ từ cho bạn bè: trong trang bộ từ chọn **⋯ → Export .json**, người nhận dùng **Data → Import .json (merge)**.
 
 ## 📱 Hướng dẫn sử dụng & Cài đặt
 

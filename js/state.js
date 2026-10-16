@@ -3,10 +3,44 @@
 ========================================================= */
 const STORAGE_KEY = 'vocabapp_sets_v1';
 
+/* Data format version written into .json files / backups.
+   v1: a bare array of sets.
+   v2: {app, version, sets, ...}; terms may also carry pos / phonetic / example
+       and spaced-repetition fields (box, due, lastReviewed).
+   migrateSets() upgrades anything older and repairs missing fields. */
+const DATA_VERSION = 2;
+
+function migrateSets(sets){
+  if(!Array.isArray(sets)) return [];
+  return sets.filter(s => s && typeof s === 'object').map(s => {
+    const set = Object.assign({}, s);
+    set.id = String(set.id || uid());
+    set.title = String(set.title ?? '');
+    set.terms = (Array.isArray(set.terms) ? set.terms : [])
+      .filter(t => t && typeof t === 'object')
+      .map(t => {
+        const term = Object.assign({}, t);
+        term.id = String(term.id || uid());
+        term.term = String(term.term ?? '');
+        term.definition = String(term.definition ?? '');
+        for(const k of ['pos','phonetic','example']){
+          if(term[k] == null || term[k] === '') delete term[k];
+          else term[k] = String(term[k]);
+        }
+        return term;
+      });
+    return set;
+  });
+}
+
+function dataFilePayload(sets){
+  return { app: 'engvocab', version: DATA_VERSION, savedAt: new Date().toISOString(), sets };
+}
+
 function loadSets(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    return raw ? migrateSets(JSON.parse(raw)) : [];
   }catch(e){ return []; }
 }
 function saveSetsLocal(sets){
@@ -77,6 +111,7 @@ function pageForView(v, extra){
 }
 
 function go(v, extra){
+  dataMenuOpen = false;
   view = v;
   session = extra || {};
   const targetPage = pageForView(v, extra);

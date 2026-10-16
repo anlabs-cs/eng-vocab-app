@@ -1,12 +1,22 @@
 /* =========================================================
    FLASHCARDS MODE
 ========================================================= */
+/* ids this session studies: the whole set, or just session.onlyIds
+   (e.g. "study the cards I'm still learning" from the results screen) */
+function fcBaseIds(s){
+  const all = s.terms.map(t=>t.id);
+  if(!Array.isArray(session.onlyIds)) return all;
+  const only = new Set(session.onlyIds);
+  const picked = all.filter(id=>only.has(id));
+  return picked.length ? picked : all;
+}
+
 function renderFlashcards(){
   const s = getSet(currentSetId);
   if(!s){ go('home'); return; }
   if(!session.order){
     session.shuffleOn = false;
-    session.order = s.terms.map(t=>t.id);
+    session.order = fcBaseIds(s);
     session.idx = 0;
     session.flipped = false;
     session.known = new Set();
@@ -15,6 +25,7 @@ function renderFlashcards(){
   }
   const termId = session.order[session.idx];
   const term = s.terms.find(t=>t.id===termId);
+  if(!term){ session.order = null; return renderFlashcards(); } // set changed under us: restart
 
   root.innerHTML = `
     <div class="study-screen">
@@ -36,7 +47,7 @@ function renderFlashcards(){
 
           <div class="flip-card" id="flipCardEl">
             <div class="fc-head"><span>Hint</span><span onclick="event.stopPropagation(); speak(${jsArg(session.flipped?term.definition:term.term)}, 'en-US')" title="Read aloud"><img src="img/icon/volume-2.png" class="theme-icon"></span></div>
-            <div class="fc-face ${session.flipped?'def':''}">${session.flipped ? escapeHtml(term.definition||'(no definition yet)') : escapeHtml(term.term)}</div>
+            <div class="fc-face ${session.flipped?'def':''}">${session.flipped ? backFaceHtml(term, '(no definition yet)') : frontFaceHtml(term)}</div>
             <div class="fc-foot"><img src="img/icon/keyboard.png" class="theme-icon"> Press <kbd>Space</kbd> or click to flip. <kbd>←</kbd> / <kbd>→</kbd> to mark</div>
           </div>
 
@@ -168,8 +179,8 @@ function fcShuffle(){
   const s = getSet(currentSetId);
   session.shuffleOn = !session.shuffleOn;
   session.order = session.shuffleOn
-    ? shuffle(s.terms.map(t=>t.id))
-    : s.terms.map(t=>t.id);
+    ? shuffle(fcBaseIds(s))
+    : fcBaseIds(s);
   session.idx = 0; session.flipped = false;
   renderFlashcards();
 }
@@ -183,25 +194,24 @@ function fcAdvance(){
     session.idx++; session.flipped = false;
   } else {
     recordStudyActivity();
-    go('results', {mode:'flashcards', known:session.known.size, total:session.order.length});
+    go('results', {mode:'flashcards', known:session.known.size, total:session.order.length, retryIds:[...session.learning]});
     return;
   }
   renderFlashcards();
 }
 function fcMark(known){
+  if(view !== 'flashcards' || !session.order) return; // e.g. a queued key press after the last card
   const termId = session.order[session.idx];
-  const s = getSet(currentSetId);
-  const t = s.terms.find(x=>x.id===termId);
-  session.history.push({
+  const entry = {
     idx: session.idx,
     termId,
     wasKnown: session.known.has(termId),
-    wasLearning: session.learning.has(termId),
-    prevMastered: t ? !!t.mastered : false
-  });
+    wasLearning: session.learning.has(termId)
+  };
   if(known){ session.known.add(termId); session.learning.delete(termId); }
   else { session.learning.add(termId); session.known.delete(termId); }
-  setTermMastery(currentSetId, termId, known);
+  entry.prevState = setTermMastery(currentSetId, termId, known);
+  session.history.push(entry);
   fcAdvance();
 }
 function fcUndo(){
@@ -213,6 +223,6 @@ function fcUndo(){
   session.learning.delete(last.termId);
   if(last.wasKnown) session.known.add(last.termId);
   if(last.wasLearning) session.learning.add(last.termId);
-  setTermMastery(currentSetId, last.termId, last.prevMastered);
+  restoreTermState(currentSetId, last.termId, last.prevState);
   renderFlashcards();
 }

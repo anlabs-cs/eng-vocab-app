@@ -5,6 +5,10 @@ function renderResults(){
   const s = getSet(currentSetId);
   if(!s){ go('home'); return; }
   let title, scoreLine, stats, retryFn, reviewHtml='';
+  const retryCount = Array.isArray(session.retryIds) ? session.retryIds.length : 0;
+  const retryLabel = session.mode === 'flashcards'
+    ? `Study ${retryCount} still-learning card${retryCount>1?'s':''} again`
+    : `Learn the ${retryCount} term${retryCount>1?'s':''} you missed`;
 
   if(session.mode==='flashcards'){
     title = 'Flashcards complete!';
@@ -83,8 +87,21 @@ function renderResults(){
           <button class="btn-ghost" onclick="go('detail')">Back to set</button>
           <button class="btn-primary" onclick="${retryFn}">Study again</button>
         </div>
+        ${retryCount ? `
+          <div style="margin-top:16px;">
+            <button class="btn-primary retry-missed-btn" onclick="retryMissed()">${retryLabel}</button>
+          </div>` : ''}
       </div>
       ${reviewHtml}
     </div>
   `;
+}
+
+/* Flashcards -> repeat only the "still learning" cards;
+   Learn / Test -> Learn mode with only the missed terms */
+function retryMissed(){
+  const ids = session.retryIds || [];
+  if(!ids.length) return;
+  if(session.mode === 'flashcards') go('flashcards', {onlyIds: ids});
+  else go('learn', {onlyIds: ids, reviewLabel: 'Missed terms'});
 }

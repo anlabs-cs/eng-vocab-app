@@ -343,24 +343,19 @@ function setTfAnswer(i, val){ session.testQuestions[i].userAnswer = val; renderT
 function setMcAnswer(i, val){ session.testQuestions[i].userAnswer = val; renderTest(); }
 function setWrittenAnswer(i, val){ session.testQuestions[i].userAnswer = val; }
 
-function normalizeAnswer(str, lenient){
-  let v = (str||'').normalize('NFC').trim().toLowerCase();
-  if(lenient) v = v.replace(/[^\p{L}\p{N}\s]/gu,'').replace(/\s+/g,' ').trim();
-  return v;
-}
-
 function submitTest(){
   const qs = session.testQuestions;
   const cfg = session.testConfig || {};
   const lenient = cfg.grading === 'lenient';
   let correct = 0;
   let totalGraded = 0;
+  const wrongIds = new Set();
   qs.forEach(q=>{
     if(q.type==='matching'){
       let allCorrect = q.terms.length>0;
       q.terms.forEach(t=>{
         const isRight = q.matches[t.id] === t.id;
-        if(!isRight) allCorrect = false;
+        if(!isRight){ allCorrect = false; wrongIds.add(t.id); }
         setTermMastery(currentSetId, t.id, isRight);
       });
       q.isCorrect = allCorrect;
@@ -377,9 +372,9 @@ function submitTest(){
     }
     q.isCorrect = isCorrect;
     totalGraded++;
-    if(isCorrect) correct++;
+    if(isCorrect) correct++; else wrongIds.add(q.term.id);
     setTermMastery(currentSetId, q.term.id, isCorrect);
   });
   recordStudyActivity();
-  go('results', {mode:'test', correct, total:totalGraded, questions:qs});
+  go('results', {mode:'test', correct, total:totalGraded, questions:qs, retryIds:[...wrongIds]});
 }

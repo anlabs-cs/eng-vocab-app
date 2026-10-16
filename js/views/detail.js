@@ -17,6 +17,8 @@ function renderDetail(){
     previewFlipped = false;
   }
   const ms = setMasteryStats(s);
+  const dueIds = dueTermIds(s);
+  const pt = s.terms[previewIndex];
 
   root.innerHTML = `
     ${topNav()}
@@ -63,7 +65,7 @@ function renderDetail(){
           <div class="preview-hint">
             <span onclick="event.stopPropagation(); speak(${jsArg(previewFlipped?(s.terms[previewIndex].definition||''):s.terms[previewIndex].term)}, 'en-US')" title="Read aloud"><img src="img/icon/volume-2.png" class="theme-icon"></span>
           </div>
-          <div class="preview-face ${previewFlipped?'def':''}" onclick="togglePreviewFlip()">${previewFlipped ? escapeHtml(s.terms[previewIndex].definition||'(no definition)') : escapeHtml(s.terms[previewIndex].term)}</div>
+          <div class="preview-face ${previewFlipped?'def':''}" onclick="togglePreviewFlip()">${previewFlipped ? backFaceHtml(pt, '(no definition)') : frontFaceHtml(pt)}</div>
           <div class="preview-footer"><span><img src="img/icon/keyboard.png" class="theme-icon"></span> Press <kbd>Space</kbd> or click on the card to flip</div>
           <div class="preview-nav">
             <button class="fc-nav" title="Previous" onclick="previewPrev()"><img src="img/icon/chevron-left.png" class="theme-icon"></button>
@@ -71,6 +73,10 @@ function renderDetail(){
             <button class="fc-nav" title="Next" onclick="previewNext()"><img src="img/icon/chevron-right.png" class="theme-icon"></button>
           </div>
         </div>
+        ${dueIds.length ? `
+          <button class="review-due-btn" onclick="startDueReview()">
+            📅 Review ${dueIds.length} due term${dueIds.length>1?'s':''} <img src="img/icon/arrow-right.png" class="theme-icon">
+          </button>` : ''}
         <div class="mode-tabs">
           <div class="mode-tab" onclick="go('flashcards')"><span class="ic"></span> Flashcards</div>
           <div class="mode-tab" onclick="go('learn')"><span class="ic"></span> Learn</div>
@@ -86,6 +92,12 @@ function renderDetail(){
       `}
     </div>
   `;
+}
+
+function startDueReview(){
+  const s = getSet(currentSetId);
+  if(!s) return;
+  go('learn', {onlyIds: dueTermIds(s), reviewLabel: 'Review'});
 }
 
 function toggleDetailMenu(e){
@@ -136,7 +148,9 @@ function duplicateSet(id){
     id: uid(),
     title: s.title + ' (copy)',
     starred: false,
-    terms: s.terms.map(t=>({id:uid(), term:t.term, definition:t.definition, mastered:false}))
+    createdAt: Date.now(),
+    lastOpened: Date.now(),
+    terms: s.terms.map(({id, mastered, box, due, lastReviewed, ...rest})=>({...rest, id:uid()}))
   };
   SETS.unshift(copy);
   saveSets(SETS);
@@ -221,9 +235,15 @@ function termRowHtml(t){
         <button class="icon-btn round-btn small" title="Edit" onclick="startInlineEdit('${t.id}')"><img src="img/icon/pencil.png" class="theme-icon"></button>
       </div>
       <div class="term-row-content">
-        <div class="t">${escapeHtml(t.term)} ${t.mastered?'<span class="mastered-tag">✓ Know</span>':''}</div>
+        <div class="t">
+          <div>${escapeHtml(t.term)} ${t.mastered?'<span class="mastered-tag">✓ Know</span>':''}</div>
+          ${t.pos || t.phonetic ? `<div class="t-meta">${t.pos?`<span class="pos-tag">${escapeHtml(t.pos)}</span>`:''} ${t.phonetic?`<span class="phonetic">${escapeHtml(t.phonetic)}</span>`:''}</div>` : ''}
+        </div>
         <div class="sep"></div>
-        <div class="d ${hideDefinitions?'hidden-def':''}">${escapeHtml(t.definition)}</div>
+        <div class="d ${hideDefinitions?'hidden-def':''}">
+          <div>${escapeHtml(t.definition)}</div>
+          ${t.example ? `<div class="d-example">“${escapeHtml(t.example)}”</div>` : ''}
+        </div>
       </div>
     </div>
   `;

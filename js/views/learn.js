@@ -32,12 +32,6 @@ function learnPlayBeep(correct){
   }catch(e){ /* ignore */ }
 }
 
-function learnNormalize(str, lenient){
-  let v = (str||'').normalize('NFC').trim().toLowerCase();
-  if(lenient) v = v.replace(/[^\p{L}\p{N}\s]/gu,'').replace(/\s+/g,' ').trim();
-  return v;
-}
-
 function buildLearnQuestion(s, termId){
   const term = s.terms.find(t=>t.id===termId);
   const settings = session.settings || defaultLearnSettings();
@@ -64,8 +58,14 @@ function buildLearnQuestion(s, termId){
 }
 
 function learnBuildQueue(s, settings){
-  const pool = settings.studyStarred ? s.terms.filter(t=>t.starred) : s.terms;
-  const ids = pool.length ? pool.map(t=>t.id) : s.terms.map(t=>t.id); // fall back if no starred terms
+  let base = s.terms;
+  if(Array.isArray(session.onlyIds)){ // review due terms / retry missed terms
+    const only = new Set(session.onlyIds);
+    const picked = s.terms.filter(t=>only.has(t.id));
+    if(picked.length) base = picked;
+  }
+  const pool = settings.studyStarred ? base.filter(t=>t.starred) : base;
+  const ids = pool.length ? pool.map(t=>t.id) : base.map(t=>t.id); // fall back if no starred terms
   return settings.shuffle ? shuffle(ids) : ids;
 }
 
@@ -82,10 +82,12 @@ function renderLearn(){
     session.answered = false;
     session.correctCount = 0;
     session.totalAnswered = 0;
+    session.missedIds = [];
   }
+  session.queue = session.queue.filter(id=>s.terms.some(t=>t.id===id)); // drop deleted terms
   if(session.queue.length===0){
     recordStudyActivity();
-    go('results', {mode:'learn', correct:session.correctCount, total:session.totalAnswered});
+    go('results', {mode:'learn', correct:session.correctCount, total:session.totalAnswered, retryIds:session.missedIds || []});
     return;
   }
   const termId = session.queue[0];
@@ -130,7 +132,7 @@ function renderLearn(){
   root.innerHTML = `
     <div class="study-screen">
       <div class="study-top">
-        <div class="left">Learn</div>
+        <div class="left">${escapeHtml(session.reviewLabel || 'Learn')}</div>
         <div class="center"><span>${doneCount} / ${session.roundTotal}</span><span class="setname">${escapeHtml(s.title)}</span></div>
         <div class="right">
           <button class="icon-btn" title="Settings" onclick="learnOpenSettings()"><img src="img/icon/settings.png" class="theme-icon"></button>
@@ -145,11 +147,13 @@ function renderLearn(){
 
           <div id="feedbackBanner" class="feedback-banner ${session.answered ? (session.wasCorrect?'ok show':'bad show') : ''}">
             ${session.answered ? (session.wasCorrect ? '✓ Correct!' : `<img src="img/icon/x.png" class="theme-icon"> Incorrect — answer: ${escapeHtml(q.correct||'')}`) : ''}
+            ${session.answered && q.term.example ? `<div class="feedback-example">“${escapeHtml(q.term.example)}”</div>` : ''}
           </div>
 
           <div class="learn-card">
             <div class="learn-label">${q.answerWithTerm?'Definition':'Term'}<span onclick="speak(${jsArg(q.term.term)},'en-US')" style="cursor:pointer;" title="Read aloud">🔊</span></div>
             <div class="learn-term">${escapeHtml(q.answerWithTerm ? q.term.definition : q.term.term)}</div>
+            ${!q.answerWithTerm && (q.term.pos || q.term.phonetic) ? `<div class="face-meta" style="margin:-8px 0 16px;">${q.term.pos?`<span class="pos-tag">${escapeHtml(q.term.pos)}</span>`:''} ${q.term.phonetic?`<span class="phonetic">${escapeHtml(q.term.phonetic)}</span>`:''}</div>` : ''}
             <div class="learn-label" style="margin-bottom:10px;">${q.options?'Choose an answer':(q.answerWithTerm?'Type the term':'Type the definition')}</div>
             ${bodyHtml}
           </div>
@@ -158,6 +162,7 @@ function renderLearn(){
             <button class="link-btn" onclick="learnDontKnow()" ${session.answered?'disabled':''}>Don't know?</button>
             ${session.answered ? `<button class="btn-primary" onclick="learnNext()">Continue <img src="img/icon/arrow-right.png" class="theme-icon"></button>` : ''}
           </div>
+          <div class="kbd-hint"><img src="img/icon/keyboard.png" class="theme-icon"> ${q.options ? `<kbd>1</kbd>–<kbd>${q.options.length}</kbd> choose · <kbd>?</kbd> don't know · ` : ''}<kbd>Enter</kbd> ${q.options ? 'continue' : 'check / continue'}</div>
         </div>
       </div>
       ${session.settingsOpen ? learnSettingsModalHtml() : ''}
@@ -345,6 +350,7 @@ function learnRestart(){
   session.answered = false;
   session.correctCount = 0;
   session.totalAnswered = 0;
+  session.missedIds = [];
   session.currentQ = null;
   session.settingsOpen = false;
   session.settingsDraft = null;
@@ -374,8 +380,8 @@ function learnSubmitWritten(){
   const lenient = session.settings.grading === 'lenient';
   session.selected = val;
   session.answered = true;
-  const normVal = learnNormalize(val, lenient);
-  const normCorrect = learnNormalize(q.correct, lenient);
+  const normVal = normalizeAnswer(val, lenient);
+  const normCorrect = normalizeAnswer(q.correct, lenient);
   session.wasCorrect = normVal === normCorrect;
   session.totalAnswered++;
   if(session.wasCorrect) session.correctCount++;
@@ -401,6 +407,8 @@ function learnNext(){
     session.queue.shift();
   } else {
     // move missed term to back of queue for retry
+    if(!session.missedIds) session.missedIds = [];
+    if(!session.missedIds.includes(termId)) session.missedIds.push(termId);
     session.queue.shift();
     session.queue.push(termId);
   }
