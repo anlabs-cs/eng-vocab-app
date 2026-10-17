@@ -50,9 +50,9 @@ async function verifyPermission(handle){
    {sets:[...]} (v2 file / backup). Always returns migrated sets. */
 function parseDataPayload(text){
   const parsed = JSON.parse(text);
-  if(Array.isArray(parsed)) return { sets: migrateSets(parsed) };
+  if(Array.isArray(parsed)) return { sets: liveSets(migrateSets(parsed)) };
   if(parsed && Array.isArray(parsed.sets)){
-    return { sets: migrateSets(parsed.sets), streak: parsed.streak || null, version: parsed.version || 1 };
+    return { sets: liveSets(migrateSets(parsed.sets)), streak: parsed.streak || null, version: parsed.version || 1 };
   }
   throw new Error('unexpected shape');
 }
@@ -200,7 +200,7 @@ function downloadBackup(){
 
 /* Merge rule: a set whose id we don't have is added. A set we already have
    gets any terms it is missing (by id); existing terms keep your progress. */
-function mergeSets(incoming){
+function mergeImportedSets(incoming){
   let added = 0, updated = 0;
   incoming.forEach(inc=>{
     const mine = getSet(inc.id);
@@ -235,7 +235,7 @@ function onDataFilePicked(evt){
       saveSets(SETS);
       alert('Restored ' + SETS.length + ' set(s).');
     } else {
-      const r = mergeSets(data.sets);
+      const r = mergeImportedSets(data.sets);
       saveSets(SETS);
       alert('Added ' + r.added + ' new set(s)' + (r.updated ? ', added new terms to ' + r.updated + ' existing set(s)' : '') + '.');
     }

@@ -63,17 +63,18 @@ window.installPWA = function() {
   }
 
   initPage(window.DEFAULT_VIEW || 'home');
-  if(SETS.length===0){
+  if(SETS.length===0 && baseSets.length===0){
     // seed a starter example set so the app isn't empty on first run
+    // (fixed ids, so two devices that both seed it merge into one set)
     SETS.push({
-      id: uid(),
+      id: 'sample-set',
       title: 'Sample Vocabulary',
       terms: [
-        {id:uid(), term:'accommodation', definition:'Chỗ ở'},
-        {id:uid(), term:'priority', definition:'Sự ưu tiên'},
-        {id:uid(), term:'advantage', definition:'Lợi thế'},
-        {id:uid(), term:'competition', definition:'Cuộc thi'},
-        {id:uid(), term:'interesting', definition:'Thú vị'}
+        {id:'sample-1', term:'accommodation', definition:'Chỗ ở'},
+        {id:'sample-2', term:'priority', definition:'Sự ưu tiên'},
+        {id:'sample-3', term:'advantage', definition:'Lợi thế'},
+        {id:'sample-4', term:'competition', definition:'Cuộc thi'},
+        {id:'sample-5', term:'interesting', definition:'Thú vị'}
       ]
     });
     saveSetsLocal(SETS);

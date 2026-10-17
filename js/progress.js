@@ -14,7 +14,10 @@ function loadStreak(){
     return raw ? JSON.parse(raw) : {lastDate:null, current:0, longest:0};
   }catch(e){ return {lastDate:null, current:0, longest:0}; }
 }
-function saveStreak(s){ localStorage.setItem(STREAK_KEY, JSON.stringify(s)); }
+function saveStreak(s){
+  localStorage.setItem(STREAK_KEY, JSON.stringify(s));
+  if(typeof driveMarkDirty === 'function') driveMarkDirty();
+}
 
 function recordStudyActivity(){
   const s = loadStreak();
