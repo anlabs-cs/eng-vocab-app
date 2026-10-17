@@ -429,5 +429,6 @@ const DriveSync = (function(){
 
 // globals used by state.js / progress.js / layout.js
 function driveMarkDirty(){ DriveSync.markDirty(); }
+function driveSyncNow(){ DriveSync.syncNow('now'); }
 function driveAllowNavigation(){ DriveSync.allowNavigation(); }
 function driveUiHtml(){ return DriveSync.uiHtml(); }

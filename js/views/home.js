@@ -188,6 +188,7 @@ function openSet(id){
 function deleteSet(id){
   if(!confirm('Delete this set? This action cannot be undone.')) return;
   SETS = SETS.filter(s=>s.id!==id);
+  render(); // vanish first, persist after
   saveSets(SETS);
-  render();
+  if(typeof driveSyncNow === 'function') driveSyncNow(); // push the deletion to Drive right away
 }

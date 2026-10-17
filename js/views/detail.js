@@ -197,6 +197,7 @@ function deleteSetFromDetail(id){
   if(!confirm('Delete this set? This action cannot be undone.')) return;
   SETS = SETS.filter(s=>s.id!==id);
   saveSets(SETS);
+  if(typeof driveSyncNow === 'function') driveSyncNow();
   go('home');
 }
 
