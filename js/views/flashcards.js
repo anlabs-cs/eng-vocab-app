@@ -53,8 +53,8 @@ function renderFlashcards(){
 
           <div class="fc-bottom-row">
             <div class="fc-controls">
-              <button class="fc-circle no" title="Still learning" onclick="fcMark(false)"><img src="img/icon/x.png" class="theme-icon"></button>
-              <button class="fc-circle yes" title="Known" onclick="fcMark(true)"><img src="img/icon/check.png" class="theme-icon"></button>
+              <button class="fc-circle no" title="Still learning" onclick="fcKeyMark(false)"><img src="img/icon/x.png" class="theme-icon"></button>
+              <button class="fc-circle yes" title="Known" onclick="fcKeyMark(true)"><img src="img/icon/check.png" class="theme-icon"></button>
             </div>
           </div>
 
@@ -135,10 +135,12 @@ function fcAttachSwipe(){
   el.addEventListener('click', onClick);
 }
 
-/* Keyboard marking (arrow keys) - plays the same fly-out animation as a swipe */
+/* Marking with the buttons, arrow keys, and the fly-out animation (same as a swipe) */
 function fcKeyMark(known){
+  if(session.marking) return; // ignore clicks/keys while a card is flying out
   const el = document.getElementById('flipCardEl');
   if(!el){ fcMark(known); return; }
+  session.marking = true;
   el.style.transition = 'transform .25s ease, opacity .25s ease';
   if(known){
     el.classList.add('swipe-yes');
@@ -200,6 +202,7 @@ function fcAdvance(){
   renderFlashcards();
 }
 function fcMark(known){
+  session.marking = false;
   if(view !== 'flashcards' || !session.order) return; // e.g. a queued key press after the last card
   const termId = session.order[session.idx];
   const entry = {

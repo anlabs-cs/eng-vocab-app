@@ -109,11 +109,50 @@ function setMasteryStats(s){
    TEXT-TO-SPEECH (Web Speech API — built into the browser)
 ========================================================= */
 const TTS_SUPPORTED = 'speechSynthesis' in window;
+// Keep a reference to the latest utterance: Chrome can garbage-collect an
+// utterance that nothing references, which silently cuts off speech.
+let _ttsCurrent = null;
+
+function pickVoice(lang){
+  const voices = window.speechSynthesis.getVoices() || [];
+  const base = lang.split('-')[0].toLowerCase();
+  const matches = v => (v.lang || '').toLowerCase().startsWith(base);
+  // Local voices start speaking immediately; network voices (e.g. Chrome's
+  // "Google ..." voices) can take 1-2s to start, so prefer local ones.
+  return voices.find(v => v.lang === lang && v.localService)
+      || voices.find(v => matches(v) && v.localService)
+      || voices.find(v => v.lang === lang)
+      || voices.find(matches)
+      || null;
+}
+
 function speak(text, lang){
   if(!TTS_SUPPORTED || !text) return;
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = lang || 'en-US';
-  u.rate = 0.95;
-  window.speechSynthesis.speak(u);
+  const synth = window.speechSynthesis;
+  try{
+    // Only cancel when something is actually queued/playing; calling cancel()
+    // on an idle engine can add startup delay on some browsers.
+    if(synth.speaking || synth.pending) synth.cancel();
+    // Chrome can get stuck in a paused state, which makes every speak() a no-op.
+    if(synth.paused) synth.resume();
+
+    const u = new SpeechSynthesisUtterance(String(text));
+    u.lang = lang || 'en-US';
+    u.rate = 0.95;
+    const voice = pickVoice(u.lang);
+    if(voice) u.voice = voice;
+    u.onerror = e => {
+      if(e.error !== 'interrupted' && e.error !== 'canceled')
+        console.warn('Speech error:', e.error);
+    };
+    _ttsCurrent = u;
+
+    // Chrome drops an utterance queued in the same tick as cancel(), so defer it.
+    // If another speak() came in meanwhile, skip this one (only the latest plays).
+    setTimeout(() => {
+      if(_ttsCurrent === u) synth.speak(u);
+    }, 0);
+  }catch(err){
+    console.warn('Text-to-speech failed:', err);
+  }
 }
