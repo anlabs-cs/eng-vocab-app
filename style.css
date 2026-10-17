@@ -184,6 +184,7 @@ kbd {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
   max-width: calc(var(--page) + 48px);
   margin: 0 auto;
   padding: 14px 24px;
@@ -203,6 +204,13 @@ kbd {
 .topnav .btn-ghost { min-height: 34px; padding: 5px 12px; font-size: 14px; border-color: transparent; }
 .topnav .btn-ghost:hover { border-color: var(--rule-strong); }
 .topnav .btn-primary { min-height: 34px; padding: 5px 12px; font-size: 14px; }
+.drive-box { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.drive-email { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--ink-3); }
+.drive-toggle { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; color: var(--ink-2); cursor: pointer; user-select: none; white-space: nowrap; }
+.drive-toggle input { accent-color: var(--accent); margin: 0; }
+.drive-status { font-size: 13px; color: var(--good); white-space: nowrap; }
+.drive-status.is-warn { color: var(--bad); }
+
 .nav-file { max-width: 220px; overflow: hidden; text-overflow: ellipsis; color: var(--good) !important; }
 
 /* ---------- Page ---------- */
@@ -1051,6 +1059,8 @@ textarea.import-box:focus { border-color: var(--ink-2); }
   .topnav .brand { font-size: 19px; }
   .topnav .btn-ghost, .topnav .btn-primary { padding: 4px 8px; font-size: 13px; }
   .nav-file { max-width: 96px; }
+  .drive-email { display: none; }
+  .drive-box { gap: 4px; }
   .page { padding: 22px 16px 70px; }
 
   .today-title { font-size: 34px; }
