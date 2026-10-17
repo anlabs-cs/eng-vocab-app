@@ -6,7 +6,7 @@
    only merges with the Drive copy. Everything is best-effort:
    signed out or offline, the app works as before.
 ========================================================= */
-const GOOGLE_CLIENT_ID = 'DAN_CLIENT_ID_VAO_DAY';
+const GOOGLE_CLIENT_ID = '415733756519-pmto26fq436lgljkik0pe5g7mvmcugnt.apps.googleusercontent.com';
 
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
 const DRIVE_FILE_NAME = 'engvocab.json';
@@ -160,6 +160,7 @@ const DriveSync = (function(){
     ss(DRIVE_TOKEN_KEY, null);
     ss(DRIVE_SYNCED_KEY, null);
     try{ localStorage.removeItem(DRIVE_META_KEY); }catch(e){} // local data stays
+    panelOpen = false;
     setStatus('signedout');
   }
 
@@ -351,21 +352,62 @@ const DriveSync = (function(){
     return meta.dirty ? 'Chưa đồng bộ' : 'Đã đăng nhập';
   }
 
+  let panelOpen = false;
+
+  function statusClass(){
+    if(needsRelogin || status === 'unsynced' || status === 'error') return 'is-warn';
+    if(status === 'syncing') return 'is-sync';
+    return 'is-ok';
+  }
+
+  function chipText(){
+    if(needsRelogin) return 'Cần đăng nhập lại';
+    const t = statusText();
+    return t.replace('Đã lưu lúc ', 'Đã lưu ');
+  }
+
+  function panelHtml(meta){
+    return `
+      <div class="drive-panel" onclick="event.stopPropagation()">
+        <div class="drive-panel-head">
+          <div class="drive-panel-title">Google Drive</div>
+          <div class="drive-panel-email">${escapeHtml(meta.email || 'Đã đăng nhập')}</div>
+        </div>
+        <div class="drive-panel-status ${statusClass()}"><span class="drive-dot"></span>${escapeHtml(statusText())}</div>
+        ${needsRelogin ? '<p class="drive-panel-note">Phiên đăng nhập đã hết hạn. Dữ liệu vẫn được giữ trên máy này.</p>' : ''}
+        <label class="drive-switch-row">
+          <span>Tự động lưu</span>
+          <span class="drive-switch"><input type="checkbox" ${meta.autosave ? 'checked' : ''} onchange="DriveSync.setAutosave(this.checked)"><i></i></span>
+        </label>
+        <div class="drive-panel-actions">
+          ${needsRelogin
+            ? '<button class="btn-primary" onclick="DriveSync.signIn()">Đăng nhập lại</button>'
+            : `<button class="btn-primary" onclick="DriveSync.syncNow('manual')" ${status === 'syncing' ? 'disabled' : ''}>Lưu ngay</button>`}
+          <button class="btn-ghost" onclick="DriveSync.signOut()">Đăng xuất</button>
+        </div>
+      </div>`;
+  }
+
   function uiHtml(){
     const meta = loadMeta();
     if(!meta.linked){
-      return '<button class="btn-ghost" onclick="DriveSync.signIn()" title="Lưu và đồng bộ dữ liệu qua Google Drive">Đăng nhập Google</button>';
+      return '<button class="btn-ghost drive-signin" onclick="DriveSync.signIn()" title="Lưu và đồng bộ dữ liệu qua Google Drive"><span class="drive-dot"></span>Đăng nhập Google</button>';
     }
-    const text = escapeHtml(statusText());
     return `
-      <span class="drive-email" title="${escapeAttr(meta.email || '')}">${escapeHtml(meta.email || 'Google Drive')}</span>
-      <label class="drive-toggle"><input type="checkbox" ${meta.autosave ? 'checked' : ''} onchange="DriveSync.setAutosave(this.checked)"> Tự động lưu</label>
-      <span class="drive-status ${status === 'unsynced' || status === 'error' ? 'is-warn' : ''}">${text}</span>
-      ${needsRelogin ? '<button class="btn-primary" onclick="DriveSync.signIn()">Đăng nhập lại</button>' : ''}
-      <button class="btn-ghost" onclick="DriveSync.syncNow(\'manual\')" ${status === 'syncing' ? 'disabled' : ''}>Lưu ngay</button>
-      <button class="btn-ghost" onclick="DriveSync.signOut()">Đăng xuất</button>
-    `;
+      <div class="drive-wrap">
+        <button class="drive-chip ${statusClass()}" onclick="DriveSync.togglePanel(event)" aria-expanded="${panelOpen}" title="${escapeAttr(meta.email || 'Google Drive')}">
+          <span class="drive-dot"></span><span class="drive-chip-text">${escapeHtml(chipText())}</span>
+        </button>
+        ${panelOpen ? panelHtml(meta) : ''}
+      </div>`;
   }
+
+  function togglePanel(e){
+    if(e) e.stopPropagation();
+    panelOpen = !panelOpen;
+    refreshUi();
+  }
+  document.addEventListener('click', () => { if(panelOpen){ panelOpen = false; refreshUi(); } });
 
   function refreshUi(){
     const box = document.getElementById('driveBox');
@@ -382,7 +424,7 @@ const DriveSync = (function(){
   }
   init();
 
-  return { signIn, signOut, syncNow, setAutosave, uiHtml, refreshUi, markDirty, allowNavigation };
+  return { signIn, signOut, syncNow, setAutosave, uiHtml, refreshUi, togglePanel, markDirty, allowNavigation };
 })();
 
 // globals used by state.js / progress.js / layout.js
