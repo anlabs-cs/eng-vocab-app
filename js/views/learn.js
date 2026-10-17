@@ -109,19 +109,19 @@ function renderLearn(){
   if(q.options){
     bodyHtml = `<div class="choices">
       ${q.options.map((opt,i)=>{
-        let cls='choice';
+        let cls='choice', mark='';
         if(session.answered){
-          if(opt===q.correct) cls+=' correct';
-          else if(opt===session.selected) cls+=' wrong';
+          if(opt===q.correct){ cls+=' correct'; mark='<span class="mark ok" aria-hidden="true">✓</span>'; }
+          else if(opt===session.selected){ cls+=' wrong'; mark='<span class="mark bad" aria-hidden="true">✗</span>'; }
         }
         return `<button class="${cls}" ${session.answered?'disabled':''} onclick="learnAnswer(${jsArg(opt)})">
-          <span class="idx">${i+1}</span><span>${escapeHtml(opt||'(empty)')}</span>
+          <span class="idx">${i+1}</span><span class="choice-text">${escapeHtml(opt||'(empty)')}</span>${mark}
         </button>`;
       }).join('')}
     </div>`;
   } else {
     bodyHtml = `
-      <input type="text" class="written-input" id="writtenInput" placeholder="${q.answerWithTerm?'Type the term...':'Type the definition...'}" value="${escapeAttr(session.answered ? (session.selected||'') : '')}" ${session.answered?'readonly':''}
+      <input type="text" class="written-input${session.answered ? (session.wasCorrect ? ' correct' : ' wrong') : ''}" id="writtenInput" placeholder="${q.answerWithTerm?'Type the term...':'Type the definition...'}" value="${escapeAttr(session.answered ? (session.selected||'') : '')}" ${session.answered?'readonly':''}
         onkeydown="if(event.key==='Enter'){ if(session.answered){ learnNext(); } else { learnSubmitWritten(); } }">
       <div style="margin-top:14px; text-align:right;">
         ${!session.answered ? `<button class="btn-primary" onclick="learnSubmitWritten()">Check</button>` : ''}
@@ -146,11 +146,11 @@ function renderLearn(){
           </div>
 
           <div id="feedbackBanner" class="feedback-banner ${session.answered ? (session.wasCorrect?'ok show':'bad show') : ''}">
-            ${session.answered ? (session.wasCorrect ? '✓ Correct!' : `<img src="img/icon/x.png" class="theme-icon"> Incorrect — answer: ${escapeHtml(q.correct||'')}`) : ''}
+            ${session.answered ? (session.wasCorrect ? '<span class="tick">✓</span> Correct!' : `<img src="img/icon/x.png" class="theme-icon"> Incorrect — answer: ${escapeHtml(q.correct||'')}`) : ''}
             ${session.answered && q.term.example ? `<div class="feedback-example">“${escapeHtml(q.term.example)}”</div>` : ''}
           </div>
 
-          <div class="learn-card">
+          <div class="learn-card${session.answered ? (session.wasCorrect ? ' flash-ok' : ' flash-bad') : ''}">
             <div class="learn-label">${q.answerWithTerm?'Definition':'Term'}<button class="icon-btn small" onclick="speak(${jsArg(q.term.term)},'en-US')" title="Read aloud"><img src="img/icon/volume-2.png" class="theme-icon" alt="Read aloud"></button></div>
             <div class="learn-term">${escapeHtml(q.answerWithTerm ? q.term.definition : q.term.term)}</div>
             ${!q.answerWithTerm && (q.term.pos || q.term.phonetic) ? `<div class="face-meta" style="margin:-8px 0 16px;">${q.term.pos?`<span class="pos-tag">${escapeHtml(q.term.pos)}</span>`:''} ${q.term.phonetic?`<span class="phonetic">${escapeHtml(q.term.phonetic)}</span>`:''}</div>` : ''}

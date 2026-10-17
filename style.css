@@ -242,7 +242,8 @@ kbd {
 .drive-switch input:focus-visible + i { outline: 2px solid var(--accent); outline-offset: 2px; }
 .drive-panel-actions { display: flex; gap: 8px; }
 .drive-panel-actions .btn-primary, .drive-panel-actions .btn-ghost { flex: 1; justify-content: center; border-color: var(--rule); }
-.nav-file { max-width: 220px; overflow: hidden; text-overflow: ellipsis; color: var(--good) !important; }
+.nav-file { max-width: 220px; }
+.nav-file .drive-chip-text { overflow: hidden; text-overflow: ellipsis; }
 
 /* ---------- Page ---------- */
 .page {
@@ -892,6 +893,35 @@ textarea.import-box:focus { border-color: var(--ink-2); }
 .learn-footer .theme-icon { width: 16px; height: 16px; }
 .kbd-hint { margin-top: 18px; text-align: center; font-size: 13px; color: var(--ink-3); }
 .kbd-hint .theme-icon { width: 16px; height: 16px; opacity: .7; }
+
+/* ---------- Learn: answer feedback animation ---------- */
+@keyframes lf-pop { 0% { transform: scale(.2); opacity: 0; } 60% { transform: scale(1.35); opacity: 1; } 100% { transform: scale(1); } }
+@keyframes lf-shake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-7px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(3px); } }
+@keyframes lf-glow-ok { 0% { box-shadow: 0 0 0 0 var(--good-soft); } 40% { box-shadow: 0 0 0 8px var(--good-soft); } 100% { box-shadow: 0 0 0 0 transparent; } }
+@keyframes lf-slide { from { transform: translateY(-8px); opacity: 0; } to { transform: none; opacity: 1; } }
+.choice { position: relative; }
+.choice .choice-text { flex: 1; }
+.choice .mark { margin-left: auto; font-size: 18px; font-weight: 700; line-height: 1; animation: lf-pop .38s cubic-bezier(.3, 1.5, .5, 1) both; }
+.choice .mark.ok { color: var(--good); }
+.choice .mark.bad { color: var(--bad); }
+.choice.correct { animation: lf-glow-ok .7s ease-out; }
+.choice.wrong { animation: lf-shake .4s ease-in-out; }
+.written-input.correct { border-color: var(--good); background: var(--good-soft); animation: lf-glow-ok .7s ease-out; }
+.written-input.wrong { border-color: var(--bad); background: var(--bad-soft); animation: lf-shake .4s ease-in-out; }
+.feedback-banner.show { animation: lf-slide .25s ease-out; }
+.feedback-banner .tick { display: inline-block; font-weight: 700; animation: lf-pop .38s cubic-bezier(.3, 1.5, .5, 1) both; }
+.feedback-banner.bad .theme-icon { animation: lf-pop .38s cubic-bezier(.3, 1.5, .5, 1) both; }
+.learn-card.flash-bad { animation: lf-shake .4s ease-in-out; }
+.progress-fill { transition: width .4s ease; }
+@media (prefers-reduced-motion: reduce) {
+  .choice, .choice .mark, .written-input, .feedback-banner, .feedback-banner .tick, .feedback-banner .theme-icon, .learn-card { animation: none !important; }
+}
+
+/* ---------- Data (.json) menu ---------- */
+.data-section { margin-top: 14px; padding: 4px 16px 16px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--bg); }
+.data-section .modal-subtitle { margin-top: 14px; }
+.data-file { display: flex; align-items: center; gap: 8px; margin: 10px 0 4px; font-size: 14px; word-break: break-all; }
+.data-file.is-ok .drive-dot { background: var(--good); }
 
 /* ---------- Modals ---------- */
 .modal-overlay {
