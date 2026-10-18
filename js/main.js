@@ -1,30 +1,93 @@
-/* keyboard shortcuts */
+/* keyboard shortcuts (full list in README) */
+function isTypingTarget(el){
+  return !!el && (el.tagName==='INPUT' || el.tagName==='TEXTAREA' || el.tagName==='SELECT' || el.isContentEditable);
+}
+
 document.addEventListener('keydown', (e)=>{
   if(DriveSync.needsLogin()) return; // login screen is showing
-  if(view==='flashcards'){
-    if(e.code==='Space'){ e.preventDefault(); fcFlip(); }
-    else if(e.key==='ArrowRight'){ fcKeyMark(true); }
-    else if(e.key==='ArrowLeft'){ fcKeyMark(false); }
-    else if(e.key==='1'){ fcMark(false); }
-    else if(e.key==='2' || e.key==='3'){ fcMark(true); }
+  const typing = isTypingTarget(document.activeElement);
+  const mod = e.ctrlKey || e.metaKey;
+  const key = e.key.length===1 ? e.key.toLowerCase() : e.key;
+
+  // Ctrl/Cmd combos work even while typing
+  if(mod && !e.altKey){
+    if(view==='editor' && key==='s'){ e.preventDefault(); saveEditor(); }
+    else if(view==='test' && key==='Enter'){ e.preventDefault(); submitTest(); }
+    return;
   }
-  else if(view==='learn' && session.currentQ && !session.settingsOpen){
-    const typing = document.activeElement && document.activeElement.tagName === 'INPUT';
-    const q = session.currentQ;
-    if(!session.answered && q.options && !typing && /^[1-9]$/.test(e.key)){
-      const opt = q.options[Number(e.key) - 1];
-      if(opt !== undefined){ e.preventDefault(); learnAnswer(opt); }
+  if(e.altKey) return;
+
+  if(e.key==='Escape'){
+    if(typing){ document.activeElement.blur(); return; }
+    if(view==='flashcards'){ session.optionsOpen ? fcCloseOptions() : go('detail'); }
+    else if(view==='learn'){ session.settingsOpen ? learnCloseSettings() : go('detail'); }
+    else if(view==='test-setup' || view==='results'){ go('detail'); }
+    else if(view==='detail'){
+      if(detailMenuOpen) closeDetailMenuOnce();
+      else if(editingTermId) cancelInlineEdit();
+      else go('home');
     }
-    else if(session.answered && e.key==='Enter' && !typing){ e.preventDefault(); learnNext(); }
-    else if(!session.answered && e.key==='?' && !typing){ learnDontKnow(); }
+    return;
+  }
+  if(typing) return;
+  // let a focused button handle its own Enter/Space
+  if((key==='Enter' || e.code==='Space') && document.activeElement && document.activeElement.tagName==='BUTTON') return;
+
+  // anywhere
+  if(key==='d' && !e.shiftKey){ toggleTheme(); return; }
+
+  if(view==='home'){
+    if(key==='/'){
+      const input = document.getElementById('homeSearchInput');
+      if(input){ e.preventDefault(); input.focus(); input.select(); }
+    }
+    else if(key==='n'){ e.preventDefault(); createNewSet(); }
   }
   else if(view==='detail'){
     const s = getSet(currentSetId);
-    if(s && s.terms.length>0 && document.activeElement.tagName!=='INPUT'){
-      if(e.code==='Space'){ e.preventDefault(); togglePreviewFlip(); }
-      else if(e.key==='ArrowRight'){ previewNext(); }
-      else if(e.key==='ArrowLeft'){ previewPrev(); }
+    if(!s || detailMenuOpen || editingTermId) return;
+    if(key==='e'){ go('editor'); return; }
+    if(s.terms.length===0) return;
+    if(e.code==='Space'){ e.preventDefault(); togglePreviewFlip(); }
+    else if(key==='ArrowRight'){ previewNext(); }
+    else if(key==='ArrowLeft'){ previewPrev(); }
+    else if(key==='f'){ go('flashcards'); }
+    else if(key==='l'){ go('learn'); }
+    else if(key==='t'){ go('test-setup'); }
+    else if(key==='r' && dueTermIds(s).length){ startDueReview(); }
+    else if(key==='s'){ const t = s.terms[previewIndex]; if(t) speak(t.term, 'en-US'); }
+  }
+  else if(view==='flashcards'){
+    if(session.optionsOpen) return;
+    if(e.code==='Space' || key==='ArrowUp' || key==='ArrowDown'){ e.preventDefault(); fcFlip(); }
+    else if(key==='ArrowRight'){ fcKeyMark(true); }
+    else if(key==='ArrowLeft'){ fcKeyMark(false); }
+    else if(key==='1'){ fcMark(false); }
+    else if(key==='2' || key==='3'){ fcMark(true); }
+    else if(key==='z' || key==='Backspace'){ e.preventDefault(); if(session.history.length) fcUndo(); }
+    else if(key==='s'){
+      const s = getSet(currentSetId);
+      const term = s && s.terms.find(t=>t.id===session.order[session.idx]);
+      if(term) speak(session.flipped ? term.definition : term.term, 'en-US');
     }
+    else if(key==='o'){ fcOpenOptions(); }
+  }
+  else if(view==='learn' && session.currentQ && !session.settingsOpen){
+    const q = session.currentQ;
+    if(!session.answered && q.options && /^[1-9]$/.test(key)){
+      const opt = q.options[Number(key) - 1];
+      if(opt !== undefined){ e.preventDefault(); learnAnswer(opt); }
+    }
+    else if(session.answered && (key==='Enter' || e.code==='Space')){ e.preventDefault(); learnNext(); }
+    else if(!session.answered && key==='?'){ learnDontKnow(); }
+    else if(key==='s'){ speak(q.term.term, 'en-US'); }
+  }
+  else if(view==='test-setup'){
+    if(key==='Enter'){ e.preventDefault(); startTest(); }
+  }
+  else if(view==='results'){
+    if(key==='r' && (session.retryIds||[]).length){ retryMissed(); }
+    else if(key==='Enter'){ e.preventDefault(); go('detail'); }
   }
 });
 
