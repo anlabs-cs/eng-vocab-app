@@ -36,7 +36,6 @@ function renderDetail(){
                 <button onclick="closeDetailMenu(); go('editor')"><span>Edit set</span></button>
                 <button onclick="closeDetailMenu(); duplicateSet('${s.id}')"><span>Duplicate</span></button>
                 <button onclick="closeDetailMenu(); printSet('${s.id}')"><span>Print</span></button>
-                <button onclick="closeDetailMenu(); exportSetJson('${s.id}')"><img src="img/icon/download.png" class="theme-icon"><span>Export .json</span></button>
                 <button class="danger" onclick="closeDetailMenu(); deleteSetFromDetail('${s.id}')"><span>Delete</span></button>
               </div>
             ` : ''}
@@ -122,22 +121,21 @@ function toggleStarSet(id){
   renderDetail();
 }
 
+// shares the terms as "term - definition" lines, which the editor's import box reads back
 function shareSet(id){
   const s = getSet(id);
   if(!s) return;
-  const payload = JSON.stringify([s], null, 2);
+  const text = s.terms.map(t=>t.term + ' - ' + t.definition).join('\n');
   if(navigator.share){
-    navigator.share({title:s.title, text:payload}).catch(()=>{});
+    navigator.share({title:s.title, text}).catch(()=>{});
     return;
   }
   if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(payload).then(()=>{
-      alert('Set data (JSON) copied to clipboard. You can paste it to share with someone.');
+    navigator.clipboard.writeText(text).then(()=>{
+      alert('Term list copied to clipboard. Paste it into "Import" when creating a set.');
     }).catch(()=>{
-      exportSetJson(id);
+      alert('Could not copy to the clipboard.');
     });
-  } else {
-    exportSetJson(id);
   }
 }
 
@@ -179,18 +177,6 @@ function printSet(id){
   w.document.close();
   w.focus();
   w.print();
-}
-
-function exportSetJson(id){
-  const s = getSet(id);
-  if(!s) return;
-  const blob = new Blob([JSON.stringify([s], null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = (s.title || 'term-set').replace(/[^\w\-]+/g,'_') + '.json';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
 }
 
 function deleteSetFromDetail(id){

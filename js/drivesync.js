@@ -1,18 +1,25 @@
 /* =========================================================
-   GOOGLE DRIVE SYNC (appDataFolder)
+   GOOGLE DRIVE SYNC (appDataFolder) + LOGIN
    Signs in with Google Identity Services and keeps one file,
    engvocab.json, in the app's hidden Drive folder. Local data
    (localStorage) stays the source the app runs on; this module
-   only merges with the Drive copy. Everything is best-effort:
-   signed out or offline, the app works as before.
+   only merges with the Drive copy.
+
+   Two modes share the same localStorage keys:
+   - guest: data lives only in this browser
+   - signed in: data is the account's (Drive) data, cached locally
+   Signing in stashes the guest data; signing out puts it back,
+   so the app returns to exactly how it was before signing in.
 ========================================================= */
 const GOOGLE_CLIENT_ID = '415733756519-pmto26fq436lgljkik0pe5g7mvmcugnt.apps.googleusercontent.com';
 
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
 const DRIVE_FILE_NAME = 'engvocab.json';
 const DRIVE_META_KEY = 'vocabapp_drive_v1';          // localStorage: {linked,email,fileId,lastSavedAt,autosave,dirty,dirtySince}
-const DRIVE_TOKEN_KEY = 'vocabapp_drive_token_v1';   // sessionStorage: {token,expiresAt}
+const DRIVE_TOKEN_KEY = 'vocabapp_drive_token_v1';   // localStorage: {token,expiresAt} (survives closing the tab)
 const DRIVE_SYNCED_KEY = 'vocabapp_drive_synced_v1'; // sessionStorage: full sync already done this session
+const GUEST_DATA_KEY = 'vocabapp_guest_data_v1';     // localStorage: guest {sets,streak} stashed while signed in
+const GUEST_OK_KEY = 'vocabapp_guest_ok_v1';         // localStorage: user chose to use the app without signing in
 const DRIVE_DEBOUNCE_MS = 5000;
 const DRIVE_MAX_WAIT_MS = 60000;
 const DRIVE_RETRY_MS = 30000;
@@ -28,7 +35,10 @@ const DriveSync = (function(){
   let retryTimer = null;
   let tokenClient = null;
   let tokenWaiter = null;
+  let tokenPromise = null;
+  let gestureArmed = false;
   let skipUnloadWarning = false;
+  let login = { busy: false, error: '' }; // login screen state
 
   /* ---------- small state helpers ---------- */
   function loadMeta(){
@@ -37,6 +47,13 @@ const DriveSync = (function(){
   }
   function saveMeta(patch){
     try{ localStorage.setItem(DRIVE_META_KEY, JSON.stringify(Object.assign(loadMeta(), patch))); }catch(e){}
+  }
+  function ls(key, val){
+    try{
+      if(val === undefined) return localStorage.getItem(key);
+      if(val === null) localStorage.removeItem(key); else localStorage.setItem(key, val);
+    }catch(e){}
+    return null;
   }
   function ss(key, val){
     try{
@@ -47,6 +64,7 @@ const DriveSync = (function(){
   }
   function configured(){ return GOOGLE_CLIENT_ID && GOOGLE_CLIENT_ID !== 'DAN_CLIENT_ID_VAO_DAY'; }
   function isLinked(){ return !!loadMeta().linked; }
+  function needsLogin(){ return !isLinked() && !ls(GUEST_OK_KEY); }
 
   function setStatus(next, relogin){
     needsRelogin = !!relogin;
@@ -57,17 +75,18 @@ const DriveSync = (function(){
   /* ---------- auth ---------- */
   function storedToken(){
     try{
-      const t = JSON.parse(ss(DRIVE_TOKEN_KEY) || 'null');
+      const t = JSON.parse(ls(DRIVE_TOKEN_KEY) || 'null');
       if(t && t.token && t.expiresAt > Date.now() + 30000) return t.token;
     }catch(e){}
     return null;
   }
 
+  function gisReady(){ return !!(window.google && google.accounts && google.accounts.oauth2); }
   function waitForGis(ms){
     return new Promise((resolve, reject) => {
       const t0 = Date.now();
       (function check(){
-        if(window.google && google.accounts && google.accounts.oauth2) return resolve();
+        if(gisReady()) return resolve();
         if(Date.now() - t0 > (ms || 10000)) return reject(new Error('gis unavailable'));
         setTimeout(check, 200);
       })();
@@ -82,8 +101,8 @@ const DriveSync = (function(){
       callback: resp => {
         const w = tokenWaiter; tokenWaiter = null;
         if(!w) return;
-        if(!resp || resp.error || !resp.access_token) return w.reject(new Error((resp && resp.error) || 'no token'));
-        ss(DRIVE_TOKEN_KEY, JSON.stringify({
+        if(!resp || resp.error || !resp.access_token) return w.reject(new Error('auth ' + ((resp && resp.error) || 'no token')));
+        ls(DRIVE_TOKEN_KEY, JSON.stringify({
           token: resp.access_token,
           expiresAt: Date.now() + (Number(resp.expires_in) || 3600) * 1000 - 60000
         }));
@@ -91,30 +110,65 @@ const DriveSync = (function(){
       },
       error_callback: err => {
         const w = tokenWaiter; tokenWaiter = null;
-        if(w) w.reject(new Error((err && err.type) || 'auth error'));
+        if(w) w.reject(new Error('auth ' + ((err && err.type) || 'error')));
       }
     });
     return tokenClient;
   }
 
-  // prompt: '' = silent when the user already consented, 'consent' = force the dialog
+  /* Opens Google's popup, so it must run from a click/keypress.
+     prompt: '' = closes by itself when the user already consented, 'select_account' = account chooser */
   function requestToken(prompt){
-    return new Promise((resolve, reject) => {
-      waitForGis().then(() => {
+    if(tokenPromise) return tokenPromise;
+    tokenPromise = new Promise((resolve, reject) => {
+      const start = () => {
         const client = ensureTokenClient();
         tokenWaiter = { resolve, reject };
         setTimeout(() => {
           if(tokenWaiter && tokenWaiter.resolve === resolve){ tokenWaiter = null; reject(new Error('auth timeout')); }
-        }, 20000);
-        client.requestAccessToken({ prompt });
-      }).catch(reject);
+        }, 120000);
+        const email = loadMeta().email;
+        client.requestAccessToken(email ? { prompt, login_hint: email } : { prompt });
+      };
+      // call synchronously when GIS is loaded so the popup keeps the user's click
+      if(gisReady()) start(); else waitForGis().then(start, reject);
     });
+    const clear = () => { tokenPromise = null; };
+    tokenPromise.then(clear, clear);
+    return tokenPromise;
   }
 
+  // a stored token, or the one a click is fetching right now; never opens a popup by itself
   async function getToken(){
     const t = storedToken();
     if(t) return t;
-    return requestToken(''); // silent refresh; rejects if the user must sign in again
+    if(tokenPromise) return tokenPromise;
+    throw new Error('needs gesture');
+  }
+
+  /* The access token lasts ~1h and Google only renews it through a popup,
+     which browsers block unless the user just clicked. So when it has
+     expired we wait for the next click/keypress anywhere in the app and
+     renew it then (the popup closes by itself). The user stays signed in. */
+  function armTokenRefresh(){
+    if(gestureArmed) return;
+    gestureArmed = true;
+    const onGesture = () => {
+      document.removeEventListener('click', onGesture, true);
+      document.removeEventListener('keydown', onGesture, true);
+      gestureArmed = false;
+      if(!isLinked() || storedToken() || tokenPromise) return;
+      requestToken('').then(() => {
+        needsRelogin = false;
+        syncNow('resume');
+      }, e => {
+        console.warn('Token refresh failed:', e);
+        if(/popup_failed_to_open/.test(e.message)) armTokenRefresh(); // blocked: try on the next click
+        else setStatus('signedout', true);
+      });
+    };
+    document.addEventListener('click', onGesture, true);
+    document.addEventListener('keydown', onGesture, true);
   }
 
   async function authFetch(url, opts, retried){
@@ -122,10 +176,23 @@ const DriveSync = (function(){
     const headers = Object.assign({}, opts && opts.headers, { Authorization: 'Bearer ' + token });
     const res = await fetch(url, Object.assign({}, opts, { headers }));
     if(res.status === 401 && !retried){
-      ss(DRIVE_TOKEN_KEY, null);
+      ls(DRIVE_TOKEN_KEY, null);
       return authFetch(url, opts, true);
     }
     return res;
+  }
+
+  async function fetchEmail(){
+    const res = await authFetch('https://www.googleapis.com/drive/v3/about?fields=user(emailAddress)');
+    if(!res.ok) throw new Error('about ' + res.status);
+    const data = await res.json();
+    return (data.user && data.user.emailAddress) || '';
+  }
+
+  function setLogin(patch){
+    Object.assign(login, patch);
+    if(needsLogin()){ if(typeof render === 'function') render(); }
+    else if(patch.error) alert(patch.error); // signing in from the nav button in guest mode
   }
 
   async function signIn(){
@@ -133,35 +200,92 @@ const DriveSync = (function(){
       alert('Chưa cấu hình GOOGLE_CLIENT_ID trong js/drivesync.js.');
       return;
     }
+    if(isLinked()) return relogin();
+    if(login.busy) return;
+    setLogin({ busy: true, error: '' });
     try{
-      await requestToken(isLinked() ? '' : 'select_account');
+      await requestToken('select_account');
     }catch(e){
-      if(isLinked()) setStatus('signedout', true);
+      const cancelled = /popup_closed|access_denied/.test(e.message);
+      const offline = /gis unavailable/.test(e.message);
+      setLogin({ busy: false, error: cancelled ? '' : offline
+        ? 'Không kết nối được tới Google. Kiểm tra kết nối mạng rồi thử lại.'
+        : 'Không mở được cửa sổ đăng nhập Google. Hãy cho phép cửa sổ bật lên (popup) rồi thử lại.' });
       return;
     }
-    saveMeta({ linked: true });
+    try{
+      await adoptAccount();
+    }catch(e){
+      console.warn('Sign-in failed:', e);
+      ls(DRIVE_TOKEN_KEY, null);
+      ls(DRIVE_META_KEY, null);
+      setLogin({ busy: false, error: 'Không tải được dữ liệu từ Google Drive. Kiểm tra kết nối mạng rồi thử lại.' });
+      return;
+    }
+    setLogin({ busy: false, error: '' });
+    ls(GUEST_OK_KEY, null);
+    setStatus('saved');
+    if(typeof go === 'function') go('home');
+  }
+
+  /* First sign-in on this browser: load the account's data from Drive.
+     The guest data is stashed (restored on sign-out). A brand-new account
+     (empty Drive file) starts from the guest data instead of from nothing.
+     Nothing local changes unless every Drive call succeeded. */
+  async function adoptAccount(){
+    const email = await fetchEmail();
+    const fileId = await ensureFile();
+    const remote = await downloadRemote(fileId);
+    const guestSets = ls(STORAGE_KEY);
+    const guestStreak = ls(STREAK_KEY);
+    const remoteEmpty = remote.sets.length === 0 && !remote.streak;
+
+    if(remoteEmpty){
+      await uploadRemote(fileId, buildPayload(baseSets, currentStreak()));
+    }
+    ls(GUEST_DATA_KEY, JSON.stringify({ sets: guestSets, streak: guestStreak }));
+    if(!remoteEmpty){
+      applyMergedSets(remote.sets);
+      ls(STREAK_KEY, remote.streak ? JSON.stringify(remote.streak) : null);
+    }
+    ls(CURRENT_SET_KEY, null);
+    saveMeta({ linked: true, email, fileId, lastSavedAt: Date.now(), dirty: false, dirtySince: 0 });
+    ss(DRIVE_SYNCED_KEY, '1');
+  }
+
+  // already signed in, the session just expired
+  async function relogin(){
+    try{ await requestToken(''); }
+    catch(e){ setStatus('signedout', true); return; }
+    needsRelogin = false;
     ss(DRIVE_SYNCED_KEY, null);
-    fetchEmail();
-    setStatus('idle');
     syncNow('signin');
   }
 
-  async function fetchEmail(){
-    try{
-      const res = await authFetch('https://www.googleapis.com/drive/v3/about?fields=user(emailAddress)');
-      if(!res.ok) return;
-      const data = await res.json();
-      if(data.user && data.user.emailAddress){ saveMeta({ email: data.user.emailAddress }); refreshUi(); }
-    }catch(e){}
+  function useAsGuest(){
+    ls(GUEST_OK_KEY, '1');
+    login = { busy: false, error: '' };
+    if(typeof render === 'function') render();
   }
 
-  function signOut(){
+  async function signOut(){
+    if(loadMeta().dirty){
+      await syncNow('signout');
+      if(loadMeta().dirty && !confirm('Một số thay đổi chưa được lưu lên Google Drive và sẽ bị mất khỏi máy này khi đăng xuất. Vẫn đăng xuất?')) return;
+    }
     clearTimeout(autosaveTimer); clearTimeout(retryTimer);
-    ss(DRIVE_TOKEN_KEY, null);
+    // the token is only dropped, not revoked: revoking would also sign out the user's other devices
+
+    // put the guest data back exactly as it was before signing in
+    let guest = {};
+    try{ guest = JSON.parse(ls(GUEST_DATA_KEY) || '{}') || {}; }catch(e){}
+    ls(STORAGE_KEY, guest.sets || null);
+    ls(STREAK_KEY, guest.streak || null);
+    [GUEST_DATA_KEY, GUEST_OK_KEY, DRIVE_META_KEY, DRIVE_TOKEN_KEY, CURRENT_SET_KEY].forEach(k => ls(k, null));
     ss(DRIVE_SYNCED_KEY, null);
-    try{ localStorage.removeItem(DRIVE_META_KEY); }catch(e){} // local data stays
-    panelOpen = false;
-    setStatus('signedout');
+
+    skipUnloadWarning = true;
+    location.href = new URL('index.html', location.href).toString(); // fresh start on the login screen
   }
 
   /* ---------- Drive REST ---------- */
@@ -253,9 +377,7 @@ const DriveSync = (function(){
       const localChanged = canonJson(mergedSets) !== canonJson(baseSets);
       const streakChanged = canonJson(mergedStreak) !== canonJson(localStreak || {});
       if(localChanged) applyMergedSets(mergedSets);
-      if(streakChanged){
-        try{ localStorage.setItem(STREAK_KEY, JSON.stringify(mergedStreak)); }catch(e){}
-      }
+      if(streakChanged) ls(STREAK_KEY, JSON.stringify(mergedStreak));
       const sameAsRemote = canonJson(mergedSets) === canonJson(remote.sets)
         && canonJson(mergedStreak) === canonJson(remote.streak || {});
       if(!sameAsRemote) await uploadRemote(fileId, buildPayload(mergedSets, mergedStreak));
@@ -266,8 +388,15 @@ const DriveSync = (function(){
       setStatus('saved');
       if(localChanged || streakChanged) renderIfSafe();
     }catch(e){
+      const msg = String(e && e.message);
+      if(msg === 'needs gesture'){
+        // token expired: still signed in, sync resumes on the next click
+        armTokenRefresh();
+        setStatus(loadMeta().dirty ? 'unsynced' : 'idle');
+        return;
+      }
       console.warn('Drive sync failed:', e);
-      const authFailed = /auth|popup|token|gis/i.test(String(e && e.message));
+      const authFailed = /auth|token|gis/i.test(msg);
       setStatus(authFailed ? 'signedout' : (navigator.onLine ? 'error' : 'unsynced'), authFailed);
       if(!authFailed && loadMeta().autosave) retryTimer = setTimeout(() => syncNow('retry'), DRIVE_RETRY_MS);
     }finally{
@@ -282,7 +411,7 @@ const DriveSync = (function(){
     if(!meta.linked) return;
     localRev++;
     if(!meta.dirty) saveMeta({ dirty: true, dirtySince: Date.now() });
-    if(status !== 'syncing') setStatus('unsynced');
+    if(status !== 'syncing') setStatus('unsynced', needsRelogin);
     scheduleAutosave();
   }
 
@@ -402,6 +531,29 @@ const DriveSync = (function(){
       </div>`;
   }
 
+  const GOOGLE_G = '<svg class="login-g" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>';
+
+  // full-page sign-in screen, shown instead of the app until the user signs in or picks guest mode
+  function loginHtml(){
+    return `
+      <div class="login-page">
+        <button class="icon-btn login-theme" title="${currentTheme()==='light'?'Switch to dark mode':'Switch to light mode'}" onclick="toggleTheme()">${currentTheme()==='light'?'<img src="img/icon/moon.png" class="theme-icon">':'<img src="img/icon/sun.png" class="theme-icon">'}</button>
+        <div class="login-card">
+          <img src="img/icon/icon-512.png" class="login-logo" alt="">
+          <div class="login-brand">EngVocab</div>
+          <h1 class="login-title">Đăng nhập để học tiếp</h1>
+          <p class="login-lead">Bộ từ, tiến độ ôn tập và chuỗi ngày học được lưu vào Google Drive của bạn — mở trên máy nào cũng thấy.</p>
+          <button class="login-google" onclick="DriveSync.signIn()" ${login.busy ? 'disabled' : ''}>
+            ${login.busy ? '<span class="login-spinner"></span>Đang đăng nhập...' : GOOGLE_G + 'Tiếp tục với Google'}
+          </button>
+          ${login.error ? `<p class="login-error" role="alert">${escapeHtml(login.error)}</p>` : ''}
+          <div class="login-or"><span>hoặc</span></div>
+          <button class="link-btn" onclick="DriveSync.useAsGuest()" ${login.busy ? 'disabled' : ''}>Dùng không cần đăng nhập</button>
+          <p class="login-note">Không đăng nhập thì dữ liệu chỉ lưu trên trình duyệt này.</p>
+        </div>
+      </div>`;
+  }
+
   function togglePanel(e){
     if(e) e.stopPropagation();
     panelOpen = !panelOpen;
@@ -416,6 +568,8 @@ const DriveSync = (function(){
 
   /* ---------- start ---------- */
   function init(){
+    // the token used to live in sessionStorage; drop any leftover copy
+    try{ sessionStorage.removeItem(DRIVE_TOKEN_KEY); }catch(e){}
     const meta = loadMeta();
     if(!meta.linked){ status = 'signedout'; return; }
     status = meta.dirty ? 'unsynced' : (meta.lastSavedAt ? 'saved' : 'idle');
@@ -424,7 +578,7 @@ const DriveSync = (function(){
   }
   init();
 
-  return { signIn, signOut, syncNow, setAutosave, uiHtml, refreshUi, togglePanel, markDirty, allowNavigation };
+  return { signIn, signOut, useAsGuest, syncNow, setAutosave, uiHtml, loginHtml, needsLogin, refreshUi, togglePanel, markDirty, allowNavigation };
 })();
 
 // globals used by state.js / progress.js / layout.js

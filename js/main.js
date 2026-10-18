@@ -1,5 +1,6 @@
 /* keyboard shortcuts */
 document.addEventListener('keydown', (e)=>{
+  if(DriveSync.needsLogin()) return; // login screen is showing
   if(view==='flashcards'){
     if(e.code==='Space'){ e.preventDefault(); fcFlip(); }
     else if(e.key==='ArrowRight'){ fcKeyMark(true); }
@@ -77,8 +78,7 @@ window.installPWA = function() {
         {id:'sample-5', term:'interesting', definition:'Thú vị'}
       ]
     });
-    saveSetsLocal(SETS);
+    saveSets(SETS);
   }
   render();
-  await tryAutoReconnect(); // if a file was connected before, try to reattach to it
 })();

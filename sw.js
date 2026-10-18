@@ -1,16 +1,13 @@
-const CACHE_NAME = 'engvocab-cache-v5';
+const CACHE_NAME = 'engvocab-cache-v6';
 const PRECACHE_URLS = [
   './',
   './index.html',
   './detail.html',
-  './flashcard.html',
-  './learn.html',
-  './test.html',
   './style.css',
   './manifest.json',
   './js/state.js',
   './js/theme.js',
-  './js/filesync.js',
+  './js/drivesync.js',
   './js/progress.js',
   './js/helpers.js',
   './js/layout.js',

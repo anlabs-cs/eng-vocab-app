@@ -3,13 +3,9 @@
 ========================================================= */
 const STORAGE_KEY = 'vocabapp_sets_v1';
 
-/* Data format version written into .json files / backups.
-   v1: a bare array of sets.
-   v2: {app, version, sets, ...}; terms may also carry pos / phonetic / example
-       and spaced-repetition fields (box, due, lastReviewed).
-   migrateSets() upgrades anything older and repairs missing fields. */
-const DATA_VERSION = 2;
-
+/* Terms may carry pos / phonetic / example and spaced-repetition fields
+   (box, due, lastReviewed). migrateSets() upgrades older data and repairs
+   missing fields. */
 function migrateSets(sets){
   if(!Array.isArray(sets)) return [];
   return sets.filter(s => s && typeof s === 'object').map(s => {
@@ -149,10 +145,6 @@ function mergeStreak(local, remote){
   };
 }
 
-function dataFilePayload(sets){
-  return { app: 'engvocab', version: DATA_VERSION, savedAt: new Date().toISOString(), sets };
-}
-
 function loadAllSets(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -163,18 +155,14 @@ function loadAllSets(){
 let baseSets = loadAllSets();   // full list incl. tombstones, as last persisted
 let SETS = liveSets(baseSets);  // what the app works with
 
-/* Persist SETS (diffing it against baseSets). Does not touch the .json file. */
-function saveSetsLocal(sets){
+/* Persist SETS (diffing it against baseSets). */
+function saveSets(sets){
   const next = reconcileSets(sets, baseSets, Date.now());
   const strip = list => canonJson(list.map(s => { const c = Object.assign({}, s); delete c.lastOpened; return c; }));
   const changed = strip(next) !== strip(baseSets);
   baseSets = cloneJson(next);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(baseSets));
   if(changed && typeof driveMarkDirty === 'function') driveMarkDirty();
-}
-function saveSets(sets){
-  saveSetsLocal(sets);
-  if(fileHandle){ writeCurrentDataToFile(); } // fire-and-forget, keeps JSON file in sync
 }
 /* Replace everything with an already-merged full list (used by Drive sync). */
 function applyMergedSets(merged){
@@ -236,7 +224,6 @@ function pageForView(v, extra){
 }
 
 function go(v, extra){
-  dataMenuOpen = false;
   view = v;
   session = extra || {};
   const targetPage = pageForView(v, extra);
@@ -248,9 +235,7 @@ function go(v, extra){
     if(currentSetId){ try{ localStorage.setItem(CURRENT_SET_KEY, currentSetId); }catch(e){} }
     const url = new URL(targetPage, location.href);
     if(currentSetId) url.searchParams.set('set', currentSetId);
-    const target = url.toString();
-    if(typeof pendingWrite !== 'undefined') pendingWrite.finally(()=>{ location.href = target; });
-    else location.href = target;
+    location.href = url.toString();
     return;
   }
 

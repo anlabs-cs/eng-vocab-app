@@ -9,7 +9,7 @@
 - **Thông tin từ đầy đủ:** Ngoài nghĩa, mỗi từ có thể có loại từ, phiên âm và câu ví dụ.
 - **Nhập nhanh:** Dán danh sách hoặc tải file `.txt` / `.csv` / `.tsv` (xuất từ Excel, Google Sheets, Anki), tự dịch nghĩa còn trống sang tiếng Việt.
 - **Hoạt động Offline (PWA):** Có thể cài đặt ứng dụng thành phần mềm độc lập trên máy tính/điện thoại. Sau khi cài, ứng dụng hoạt động không cần mạng Internet (trừ tính năng gợi ý nghĩa).
-- **Bảo toàn dữ liệu:** Nút **Data** cho phép tải bản sao lưu toàn bộ, khôi phục, gộp bộ từ bạn bè gửi mà không mất dữ liệu cũ, và (trên Chrome/Edge) tự động lưu mọi thay đổi vào một file `.json` trên máy.
+- **Đăng nhập Google & đồng bộ:** Đăng nhập bằng Google để lưu bộ từ, tiến độ và streak vào Google Drive (thư mục ẩn của ứng dụng), dùng chung trên nhiều máy. Mở lại web vẫn giữ đăng nhập. Có thể chọn **Dùng không cần đăng nhập** — khi đó dữ liệu chỉ lưu trên trình duyệt; đăng xuất sẽ đưa dữ liệu về đúng như trước khi đăng nhập.
 - **Phát âm từ vựng:** Tích hợp sẵn *Web Speech API (Text-to-Speech)* đọc tiếng Anh.
 - **Giao diện thân thiện:** Dark Mode, dùng tốt trên điện thoại, phím tắt (Flashcards: Space lật thẻ, ← / → đánh dấu; Learn: 1–4 chọn đáp án, Enter tiếp tục, ? không biết).
 
@@ -23,8 +23,8 @@ Hoặc các cột cách nhau bằng Tab (dán từ Excel/Sheets) hay file CSV, t
 `từ | nghĩa | câu ví dụ | loại từ | phiên âm` (chỉ 2 cột đầu là bắt buộc).
 
 ## 🔄 Dùng chung dữ liệu trên nhiều máy
-Trên Chrome/Edge: **Data → Create new .json file** và lưu file vào thư mục Google Drive / OneDrive / Dropbox đã đồng bộ. Ở máy khác, chọn **Data → Open .json file** và mở cùng file đó. Chỉ nên mở app trên một máy tại một thời điểm.
-Để chia sẻ một bộ từ cho bạn bè: trong trang bộ từ chọn **⋯ → Export .json**, người nhận dùng **Data → Import .json (merge)**.
+Đăng nhập cùng một tài khoản Google trên các máy, dữ liệu sẽ tự đồng bộ qua Google Drive.
+Để chia sẻ một bộ từ cho bạn bè: trong trang bộ từ bấm nút **Share** (danh sách `từ - nghĩa`), người nhận dán vào ô nhập nhanh khi tạo bộ từ mới.
 
 ## 📱 Hướng dẫn sử dụng & Cài đặt
 
@@ -38,7 +38,7 @@ Truy cập ứng dụng tại: **[Eng-Vocab Web](https://anlabs-cs.github.io/eng
 4. Chọn **Install/Cài đặt**. Ứng dụng sẽ được tạo shortcut ngoài màn hình Desktop. Từ nay, bạn mở nó lên học bình thường kể cả khi ngắt kết nối Wifi.
 
 ### Cách 2: Chạy cục bộ trên máy (Mã nguồn tải về)
-Nếu bạn tải mã nguồn gốc `.zip` về máy, bạn nên chạy ứng dụng thông qua script tích hợp sẵn để không bị trình duyệt chặn tính năng lưu file:
+Nếu bạn tải mã nguồn gốc `.zip` về máy, bạn nên chạy ứng dụng thông qua script tích hợp sẵn để đăng nhập Google và Service Worker hoạt động đúng:
 - **Trên Windows:** Nháy đúp vào file `start.bat`.
 - **Trên Mac/Linux:** Mở Terminal ở thư mục gốc và chạy `./start.sh`.
 - Trình duyệt sẽ tự động hướng dẫn bạn vào địa chỉ `http://localhost:8765`.
@@ -56,4 +56,4 @@ Nếu bạn tải mã nguồn gốc `.zip` về máy, bạn nên chạy ứng d�
 ## 🛠 Tech Stack
 - Frontend: HTML5, CSS3, Vanilla JavaScript.
 - Offline Core: Service Worker (PWA Manifest).
-- Browser APIs: Web Speech API, File System Access API.
+- Browser APIs: Web Speech API, Google Identity Services + Google Drive API (appDataFolder).

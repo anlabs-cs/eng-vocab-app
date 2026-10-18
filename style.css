@@ -242,8 +242,58 @@ kbd {
 .drive-switch input:focus-visible + i { outline: 2px solid var(--accent); outline-offset: 2px; }
 .drive-panel-actions { display: flex; gap: 8px; }
 .drive-panel-actions .btn-primary, .drive-panel-actions .btn-ghost { flex: 1; justify-content: center; border-color: var(--rule); }
-.nav-file { max-width: 220px; }
-.nav-file .drive-chip-text { overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- Login screen ---------- */
+.login-page {
+  position: relative;
+  min-height: 100vh; min-height: 100dvh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 32px 16px;
+}
+.login-theme { position: absolute; top: 14px; right: 16px; }
+.login-card {
+  width: 100%; max-width: 400px;
+  padding: 36px 32px 28px;
+  background: var(--paper); border: 1px solid var(--rule);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+  text-align: center;
+}
+.login-logo { width: 56px; height: 56px; border-radius: 12px; }
+.login-brand {
+  margin-top: 6px;
+  font-family: var(--serif); font-size: 18px; font-weight: 700; font-style: italic;
+  letter-spacing: -0.02em; color: var(--ink-2);
+}
+.login-title { margin: 18px 0 8px; font-size: 28px; line-height: 1.2; }
+.login-lead { margin: 0 0 24px; font-size: 15px; line-height: 1.55; color: var(--ink-2); }
+.login-google {
+  width: 100%; min-height: 46px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  background: var(--ink); color: var(--paper);
+  border: 1px solid var(--ink); border-radius: var(--radius);
+  font-size: 15px; font-weight: 600;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.login-google:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.login-google:disabled { opacity: .75; cursor: default; }
+.login-g { width: 20px; height: 20px; flex: none; padding: 2px; background: #fff; border-radius: 50%; box-sizing: content-box; }
+.login-spinner {
+  width: 16px; height: 16px; flex: none;
+  border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%;
+  animation: login-spin .8s linear infinite;
+}
+@keyframes login-spin { to { transform: rotate(360deg); } }
+.login-error {
+  margin: 14px 0 0; padding: 10px 12px;
+  background: var(--bad-soft); color: var(--bad);
+  border-radius: var(--radius); font-size: 14px; line-height: 1.45; text-align: left;
+}
+.login-or {
+  display: flex; align-items: center; gap: 12px;
+  margin: 22px 0 8px; font-size: 13px; color: var(--ink-3);
+}
+.login-or::before, .login-or::after { content: ''; flex: 1; border-top: 1px solid var(--rule); }
+.login-note { margin: 2px 0 0; font-size: 13px; color: var(--ink-3); }
 
 /* ---------- Page ---------- */
 .page {
@@ -918,10 +968,6 @@ textarea.import-box:focus { border-color: var(--ink-2); }
 }
 
 /* ---------- Data (.json) menu ---------- */
-.data-section { margin-top: 14px; padding: 4px 16px 16px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--bg); }
-.data-section .modal-subtitle { margin-top: 14px; }
-.data-file { display: flex; align-items: center; gap: 8px; margin: 10px 0 4px; font-size: 14px; word-break: break-all; }
-.data-file.is-ok .drive-dot { background: var(--good); }
 
 /* ---------- Modals ---------- */
 .modal-overlay {
@@ -1119,7 +1165,6 @@ textarea.import-box:focus { border-color: var(--ink-2); }
   .topnav { padding: 10px 14px; gap: 4px; }
   .topnav .brand { font-size: 19px; }
   .topnav .btn-ghost, .topnav .btn-primary { padding: 4px 8px; font-size: 13px; }
-  .nav-file { max-width: 96px; }
   .drive-chip { padding: 4px 10px; }
   .drive-panel { position: fixed; left: 12px; right: 12px; top: 56px; width: auto; }
   .page { padding: 22px 16px 70px; }
@@ -1161,6 +1206,8 @@ textarea.import-box:focus { border-color: var(--ink-2); }
   .results-score { font-size: 48px; }
   .results-stats { gap: 24px; }
   .modal { padding: 22px 16px 18px; }
+  .login-card { padding: 28px 20px 22px; }
+  .login-title { font-size: 25px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
