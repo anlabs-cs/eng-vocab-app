@@ -35,6 +35,11 @@ or Tab / CSV columns: term, definition, example, word type, phonetic."></textare
         ${s.terms.map((t, i) => editorRowHtml(t, i)).join('')}
       </div>
       <button class="add-row-btn" onclick="addRow()">Add a card</button>
+      <div class="editor-shortcuts">
+        <span><kbd>Enter</kbd> in Definition: use suggestion</span>
+        <span><kbd>Ctrl</kbd> + <kbd>Enter</kbd> new card</span>
+        <span><kbd>Ctrl</kbd> + <kbd>S</kbd> save set</span>
+      </div>
 
       <div class="editor-actions">
         <button class="btn-ghost" onclick="go('detail')">Cancel</button>
@@ -57,7 +62,7 @@ function editorRowHtml(t, i) {
           </div>
           <div class="editor-col">
             <span class="field-label">Definition</span>
-            <input type="text" class="def-input" value="${escapeAttr(t.definition)}" placeholder="e.g. chỗ ở" onfocus="suggestDefinition('${t.id}')">
+            <input type="text" class="def-input" value="${escapeAttr(t.definition)}" placeholder="e.g. chỗ ở" onfocus="suggestDefinition('${t.id}')" onkeydown="defKeydown(event, '${t.id}')">
             <div class="def-suggestion" id="sugg-${t.id}"></div>
           </div>
         </div>
@@ -114,21 +119,28 @@ async function suggestDefinition(rowId) {
   const term = termInput.value.trim();
   if (!term || defInput.value.trim() !== '') {
     suggBox.innerHTML = '';
+    delete suggBox.dataset.value;
+    delete suggBox.dataset.pending;
     return;
   }
+  delete suggBox.dataset.value;
 
   if (!_suggestCache[term.toLowerCase()]) suggBox.innerHTML = `<span class="sugg-loading">Đang dịch...</span>`;
   try {
     const translated = await translateToVi(term);
-    if (!translated) { suggBox.innerHTML = ''; return; }
+    if (!translated) { suggBox.innerHTML = ''; delete suggBox.dataset.pending; return; }
     // make sure the field wasn't filled in / focus moved on while we waited
     if (document.activeElement === defInput && defInput.value.trim() === '') {
       renderSuggestionChip(suggBox, rowId, translated);
+      // Enter was pressed while the translation was still loading: apply it now
+      if (suggBox.dataset.pending) { delete suggBox.dataset.pending; acceptSuggestion(rowId); }
     } else {
       suggBox.innerHTML = '';
+      delete suggBox.dataset.pending;
     }
   } catch (e) {
     suggBox.innerHTML = `<span class="sugg-error">Không thể gợi ý nghĩa</span>`;
+    delete suggBox.dataset.pending;
   }
 }
 
@@ -146,6 +158,29 @@ function acceptSuggestion(rowId) {
   const defInput = row.querySelector('.def-input');
   defInput.value = suggBox.dataset.value;
   suggBox.innerHTML = '';
+  delete suggBox.dataset.value;
+  defInput.focus();
+  defInput.setSelectionRange(defInput.value.length, defInput.value.length);
+}
+
+/* Enter in the Definition field: use the suggestion (only while the field is
+   still empty, so it never overwrites typed text). Ignored during IME
+   composition (Unikey / Telex) so confirming a Vietnamese word is unaffected.
+   Ctrl/Cmd+Enter is handled globally in main.js (new card). */
+function defKeydown(e, rowId) {
+  if (e.key !== 'Enter' || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+  if (e.isComposing || e.keyCode === 229) return;
+  const defInput = e.target;
+  if (defInput.value.trim() !== '') return;
+  const suggBox = document.getElementById(`sugg-${rowId}`);
+  if (!suggBox) return;
+  if (suggBox.querySelector('.sugg-chip') && suggBox.dataset.value) {
+    e.preventDefault();
+    acceptSuggestion(rowId);
+  } else if (suggBox.querySelector('.sugg-loading')) {
+    e.preventDefault();               // translation still loading
+    suggBox.dataset.pending = '1';
+  }
 }
 
 /* Read every editor row from the DOM. Fields the editor doesn't show
@@ -192,6 +227,19 @@ function addRow() {
   renderEditor();
   const inputs = document.querySelectorAll('.term-input');
   if (inputs.length) inputs[inputs.length - 1].focus();
+}
+
+/* Ctrl/Cmd+Enter: add a card and jump to its Term field. If the last card is
+   still completely empty, just focus it instead of piling up blank cards. */
+function addRowShortcut() {
+  const rows = document.querySelectorAll('#rowsContainer .editor-row');
+  const last = rows[rows.length - 1];
+  const blank = last && ['.term-input', '.def-input', '.pos-input', '.phonetic-input', '.example-input']
+    .every(sel => !last.querySelector(sel).value.trim());
+  if (blank) { last.querySelector('.term-input').focus(); return; }
+  addRow();
+  const inputs = document.querySelectorAll('.term-input');
+  if (inputs.length) inputs[inputs.length - 1].scrollIntoView({ block: 'center', behavior: 'smooth' });
 }
 
 function removeRow(id) {

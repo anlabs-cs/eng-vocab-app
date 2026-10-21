@@ -86,7 +86,7 @@ function renderDetail(){
             <h3>Terms in this set (${s.terms.length})</h3>
             <button class="btn-ghost" onclick="toggleHideDefinitions()">${hideDefinitions?'Show definitions':'Hide definitions'}</button>
           </div>
-          ${s.terms.map(t=>termRowHtml(t)).join('')}
+          <div class="ruled">${s.terms.map(t=>termRowHtml(t)).join('')}</div>
         </div>
       `}
     </div>

@@ -12,6 +12,7 @@ document.addEventListener('keydown', (e)=>{
   // Ctrl/Cmd combos work even while typing
   if(mod && !e.altKey){
     if(view==='editor' && key==='s'){ e.preventDefault(); saveEditor(); }
+    else if(view==='editor' && key==='Enter' && !e.isComposing){ e.preventDefault(); addRowShortcut(); }
     else if(view==='test' && key==='Enter'){ e.preventDefault(); submitTest(); }
     return;
   }

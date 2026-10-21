@@ -28,7 +28,9 @@ Phím tắt không hoạt động khi đang gõ trong ô nhập (trừ các tổ
 | | `F` / `L` / `T` | Mở Flashcards / Learn / Test |
 | | `R` | Ôn các từ đến hạn |
 | | `E` | Sửa bộ từ |
-| Sửa bộ từ | `Ctrl` + `S` | Lưu bộ từ |
+| Sửa bộ từ | `Enter` (ở ô Definition) | Dùng nghĩa gợi ý (khi ô còn trống) |
+| | `Ctrl` + `Enter` | Thêm thẻ mới và nhảy tới ô Term |
+| | `Ctrl` + `S` | Lưu bộ từ |
 | Flashcards | `Space` / `↑` / `↓` | Lật thẻ |
 | | `→` hoặc `2` | Đã thuộc |
 | | `←` hoặc `1` | Chưa thuộc |

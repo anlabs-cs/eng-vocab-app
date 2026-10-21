@@ -10,12 +10,15 @@
    Icons in img/icon are white PNGs: tinted via filter below.
 ========================================================= */
 :root {
-  --bg: #f4efe4;
+  --bg: #e6dfd0;
+  --desk: #e6dfd0;
+  --margin-line: rgba(200, 70, 50, 0.55);
+  --ln: 38px;
   --paper: #fbf8f1;
   --paper-2: #efe8da;
-  --ink: #26221c;
-  --ink-2: #5e574b;
-  --ink-3: #8d8576;
+  --ink: #1d1913;
+  --ink-2: #453f35;
+  --ink-3: #6a6354;
   --rule: #e2d9c8;
   --rule-strong: #c9bca5;
   --accent: #b23a1e;
@@ -29,8 +32,9 @@
   --card-margin: rgba(178, 58, 30, 0.35);
   --shadow: 0 1px 2px rgba(60, 45, 20, 0.06), 0 6px 18px rgba(60, 45, 20, 0.07);
 
-  --serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
-  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --serif: 'Lora', 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  --sans: 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --hand: 'Patrick Hand', 'Segoe Print', 'Bradley Hand', cursive;
   --radius: 6px;
   --page: 760px;
 
@@ -38,12 +42,14 @@
 }
 
 :root[data-theme="dark"] {
-  --bg: #1b1915;
+  --bg: #14120f;
+  --desk: #14120f;
+  --margin-line: rgba(226, 128, 92, 0.5);
   --paper: #23201b;
   --paper-2: #2c2822;
-  --ink: #f3efe7;
-  --ink-2: #d2ccc1;
-  --ink-3: #a59e92;
+  --ink: #f7f3eb;
+  --ink-2: #ddd7cc;
+  --ink-3: #b5aea2;
   --rule: #38342e;
   --rule-strong: #4e4840;
   --accent: #e2805c;
@@ -1212,4 +1218,147 @@ textarea.import-box:focus { border-color: var(--ink-2); }
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
+}
+
+
+/* =========================================================
+   v2 — notebook sheet, bigger / bolder type
+   (loaded last so it overrides the base rules above)
+========================================================= */
+
+/* ---------- Type: larger and heavier ---------- */
+body { font-size: 17px; font-weight: 500; line-height: 1.55; }
+h1, h2, h3 { font-weight: 700; letter-spacing: 0; }
+kbd { font-size: 13px; font-weight: 600; }
+.btn-primary, .btn-ghost { min-height: 42px; font-size: 16px; font-weight: 600; }
+.topnav .btn-ghost, .topnav .btn-primary { min-height: 38px; font-size: 15px; }
+.topnav .brand { font-family: var(--hand); font-style: normal; font-weight: 400; font-size: 32px; letter-spacing: 0; color: var(--accent); line-height: 1.1; }
+.crumb { font-size: 15.5px; font-weight: 500; }
+h1.set-title { font-size: 46px; font-weight: 700; }
+.section-title { font-size: 30px; }
+.today-title { font-size: 48px; }
+.today-streak { font-size: 15.5px; }
+.today-lead { font-size: 22px; font-weight: 500; }
+.today-set { font-size: 21px; font-weight: 600; }
+.set-card .name { font-size: 23px; font-weight: 600; }
+.set-card .meta { font-size: 15.5px; }
+.mastery-bar-head { font-size: 15.5px; }
+.mode-tab { font-size: 16.5px; font-weight: 700; }
+.term-list-header h3 { font-size: 24px; }
+.term-list-header .btn-ghost { font-size: 15px; }
+.field-label { font-size: 12.5px; color: var(--ink-2); }
+.dropdown-menu button { font-size: 16px; font-weight: 500; }
+.import-option, .import-status { font-size: 15.5px; }
+.drive-panel-note, .login-note { font-size: 14px; }
+
+.preview-face, .flip-card .fc-face { font-size: 38px; font-weight: 600; }
+.preview-face.def, .flip-card .fc-face.def { font-size: 32px; }
+.face-meta, .t-meta { font-size: 17px; font-weight: 500; }
+.face-example, .d-example, .feedback-example { font-size: 18px; font-weight: 500; }
+.preview-count { font-size: 15.5px; }
+.stat-pill { font-size: 15.5px; }
+.preview-footer, .flip-card .fc-foot { font-size: 14.5px; }
+
+/* ---------- Notebook sheet ---------- */
+body { background: var(--desk); }
+.topnav { background: var(--desk); border-bottom: 0; max-width: 900px; }
+.sticky-bar { top: 66px; }
+.page {
+  position: relative;
+  max-width: 900px;
+  margin: 4px auto 64px;
+  padding: 44px 40px 72px 92px;
+  background: var(--paper);
+  border-radius: 3px 10px 10px 3px;
+  box-shadow:
+    inset 8px 0 14px -10px rgba(60, 45, 20, 0.28),
+    0 1px 2px rgba(60, 45, 20, 0.12),
+    0 14px 34px rgba(60, 45, 20, 0.16);
+}
+/* double red margin rule */
+.page::before {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0; left: 70px;
+  width: 5px;
+  border-left: 1px solid var(--margin-line);
+  border-right: 1px solid var(--margin-line);
+  pointer-events: none;
+  z-index: 11;
+}
+/* binder holes */
+.page::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0; left: 16px;
+  width: 22px;
+  background: radial-gradient(circle at 11px 11px, var(--desk) 0 8px, rgba(0, 0, 0, 0.22) 8px 9.5px, transparent 10px) 0 28px / 22px 120px repeat-y;
+  pointer-events: none;
+}
+.sticky-bar { background: var(--paper); }
+.editor-actions { background: var(--paper); border-top-color: var(--rule-strong); }
+.dropdown-menu { background: var(--paper); }
+
+/* ---------- Ruled lines for term lists (line pitch = --ln) ---------- */
+.ruled {
+  background-image: linear-gradient(to bottom, transparent calc(var(--ln) - 1px), var(--rule-strong) calc(var(--ln) - 1px));
+  background-size: 100% var(--ln);
+  border-bottom: 1px solid var(--rule-strong);
+}
+.ruled .term-row {
+  padding: 0;
+  gap: 12px;
+  border: 0;
+  align-items: flex-start;
+  line-height: var(--ln);
+}
+.ruled .term-row-content { gap: 18px; }
+.ruled .term-row .t { font-size: 22px; font-weight: 600; line-height: var(--ln); }
+.ruled .term-row .d { font-size: 19px; font-weight: 500; line-height: var(--ln); color: var(--ink); }
+.ruled .term-row .t-meta { margin-top: 0; font-size: 16px; line-height: var(--ln); }
+.ruled .term-row .d-example { margin-top: 0; font-size: 17px; line-height: var(--ln); }
+.ruled .term-row .sep { background: var(--rule-strong); }
+.ruled .term-row-icons { height: var(--ln); align-items: center; }
+.ruled .term-row.editing input { height: var(--ln); padding: 0 6px; font-size: 19px; }
+.ruled .term-row .d.hidden-def::before { inset: 9px 0; }
+.mastered-tag { line-height: 1.2; }
+
+/* ---------- Editor ---------- */
+#rowsContainer { border-top: 0; }
+.editor-row { padding: 14px 0 10px; border-bottom: 1px dashed var(--rule-strong); }
+.editor-row .num { font-family: var(--hand); font-style: normal; font-size: 26px; color: var(--accent); margin-top: 22px; width: 30px; }
+.editor-row input { font-size: 19px; font-weight: 500; padding: 7px 2px 6px; border-bottom: 1.5px solid var(--rule-strong); }
+.editor-row input.term-input { font-size: 22px; font-weight: 600; }
+.editor-extra input { font-size: 17px; }
+.extra-toggle { font-size: 14.5px; font-weight: 600; }
+.sugg-chip { font-size: 16px; font-weight: 600; padding: 2px 10px; }
+.sugg-chip em::after { content: '  ↵ Enter'; font-size: 12.5px; font-weight: 600; }
+.sugg-loading, .sugg-error { font-size: 14.5px; }
+.add-row-btn { font-size: 16px; font-weight: 700; }
+.editor-shortcuts {
+  display: flex; flex-wrap: wrap; gap: 6px 18px;
+  margin-top: 12px;
+  font-size: 14px; color: var(--ink-2);
+}
+
+/* ---------- Phones: narrower binding margin ---------- */
+@media (max-width: 640px) {
+  :root { --ln: 36px; }
+  body { font-size: 16.5px; }
+  .topnav { padding: 10px 14px; }
+  .page { margin: 0 8px 40px; padding: 28px 16px 56px 52px; border-radius: 2px 8px 8px 2px; }
+  .page::before { left: 38px; }
+  .page::after { left: 6px; width: 20px; background-size: 20px 110px; background-position: 0 20px; }
+  .topnav .brand { font-size: 27px; }
+  .sticky-bar { top: 56px; }
+  .topnav .btn-ghost, .topnav .btn-primary { font-size: 14px; }
+  h1.set-title { font-size: 36px; }
+  .today-title { font-size: 38px; }
+  .today-lead { font-size: 19.5px; }
+  .mode-tab { font-size: 15.5px; }
+  .preview-face, .flip-card .fc-face { font-size: 30px; }
+  .preview-face.def, .flip-card .fc-face.def { font-size: 26px; }
+  .ruled .term-row-content { gap: 0; }
+  .ruled .term-row .t { font-size: 20px; }
+  .ruled .term-row .d { font-size: 17.5px; }
 }
