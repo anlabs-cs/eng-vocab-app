@@ -99,7 +99,7 @@ function renderHome(){
 
       <div class="section-head">
         <h2 class="section-title">Sets</h2>
-        <button class="btn-ghost" onclick="createNewSet()">+ New set</button>
+        <button class="btn-ghost" onclick="createNewSet()"><img src="img/icon/plus.png" class="theme-icon"> New</button>
       </div>
 
       ${SETS.length>1 ? `
@@ -134,7 +134,7 @@ function todayHtml(streak, dueTotal){
         <span class="today-streak">${streakText}</span>
       </div>
       ${dueTotal>0 ? `
-        <p class="today-lead"><strong>${dueTotal}</strong> term${dueTotal>1?'s':''} to review.</p>
+        <p class="today-lead"><strong>${dueTotal}</strong> review.</p>
         <ul class="today-list">
           ${dueSets.map(({s,n})=>`
             <li>

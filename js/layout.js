@@ -36,3 +36,20 @@ function topNav(){
     </div>
   `;
 }
+
+/* Light/dark button for the study screens (Flashcards / Learn / Test).
+   Switches the theme in place WITHOUT re-rendering, so half-typed answers
+   and the current card/question are left untouched. */
+function studyThemeBtnHtml(){
+  const light = currentTheme()==='light';
+  return `<button class="icon-btn" id="studyThemeBtn" title="${light?'Switch to dark mode':'Switch to light mode'}" onclick="studyToggleTheme()"><img src="img/icon/${light?'moon':'sun'}.png" class="theme-icon"></button>`;
+}
+function studyToggleTheme(){
+  applyTheme(currentTheme()==='light' ? 'dark' : 'light');
+  const b = document.getElementById('studyThemeBtn');
+  if(b){
+    const light = currentTheme()==='light';
+    b.title = light ? 'Switch to dark mode' : 'Switch to light mode';
+    b.innerHTML = `<img src="img/icon/${light?'moon':'sun'}.png" class="theme-icon">`;
+  }
+}

@@ -231,10 +231,11 @@ function renderTest(){
 
   root.innerHTML = `
     <div class="study-screen">
+     <div class="study-sheet">
       <div class="study-top">
         <div class="left">Test</div>
         <div class="center"><span class="setname">${escapeHtml(s.title)}</span></div>
-        <div class="right"><button class="icon-btn" onclick="go('detail')"><img src="img/icon/x.png" class="theme-icon"></button></div>
+        <div class="right">${studyThemeBtnHtml()}<button class="icon-btn" title="Close" onclick="go('detail')"><img src="img/icon/x.png" class="theme-icon"></button></div>
       </div>
       <div class="study-body">
         <div class="study-inner">
@@ -244,6 +245,7 @@ function renderTest(){
           </div>
         </div>
       </div>
+     </div>
     </div>
   `;
   const newScrollEl = root.querySelector('.study-body');

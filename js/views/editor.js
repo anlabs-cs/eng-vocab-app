@@ -12,7 +12,7 @@ function renderEditor() {
       <div class="crumb"><a onclick="go('detail')">← ${escapeHtml(s.title || 'Back')}</a></div>
       <input class="title-input" id="setTitleInput" value="${escapeAttr(s.title)}" placeholder="Enter a title">
 
-      <button class="toggle-link" onclick="toggleImport()" id="importToggle"><img src="img/icon/import.png" class="theme-icon"> Paste a list or load a file to import quickly</button>
+      <button class="toggle-link" onclick="toggleImport()" id="importToggle"><img src="img/icon/import.png" class="theme-icon"> Import quickly</button>
       <div id="importBox" class="hidden" style="margin-top:12px;">
         <textarea class="import-box" id="importText" placeholder="accommodation - chỗ ở, nơi ở
 priority	sự ưu tiên	Safety is our top priority.	n.	/praɪˈɒrəti/
@@ -35,12 +35,7 @@ or Tab / CSV columns: term, definition, example, word type, phonetic."></textare
         ${s.terms.map((t, i) => editorRowHtml(t, i)).join('')}
       </div>
       <button class="add-row-btn" onclick="addRow()">Add a card</button>
-      <div class="editor-shortcuts">
-        <span><kbd>Enter</kbd> in Term: go to Definition</span>
-        <span><kbd>Enter</kbd> in Definition: use suggestion</span>
-        <span><kbd>Ctrl</kbd> + <kbd>Enter</kbd> new card</span>
-        <span><kbd>Ctrl</kbd> + <kbd>S</kbd> save set</span>
-      </div>
+      
 
       <div class="editor-actions">
         <button class="btn-ghost" onclick="go('detail')">Cancel</button>

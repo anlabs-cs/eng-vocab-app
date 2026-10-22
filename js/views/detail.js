@@ -3,10 +3,30 @@
 ========================================================= */
 let detailMenuOpen = false;
 let hideDefinitions = false;
+let revealedIds = new Set();
+let hideStateSetId = null;
+const HIDE_STATE_KEY = 'vocabapp_hide_v1';
 let editingTermId = null;
 let previewIndex = 0;
 let previewFlipped = false;
 let previewSetId = null;
+
+function loadHideState(){
+  if(hideStateSetId === currentSetId) return;
+  hideStateSetId = currentSetId;
+  hideDefinitions = false; revealedIds = new Set();
+  try{
+    const st = (JSON.parse(sessionStorage.getItem(HIDE_STATE_KEY) || '{}'))[currentSetId];
+    if(st){ hideDefinitions = !!st.hide; revealedIds = new Set(st.shown || []); }
+  }catch(e){}
+}
+function saveHideState(){
+  try{
+    const all = JSON.parse(sessionStorage.getItem(HIDE_STATE_KEY) || '{}');
+    all[currentSetId] = { hide: hideDefinitions, shown: [...revealedIds] };
+    sessionStorage.setItem(HIDE_STATE_KEY, JSON.stringify(all));
+  }catch(e){}
+}
 
 function renderDetail(){
   const s = getSet(currentSetId);
@@ -65,7 +85,7 @@ function renderDetail(){
             <span onclick="event.stopPropagation(); speak(${jsArg(previewFlipped?(s.terms[previewIndex].definition||''):s.terms[previewIndex].term)}, 'en-US')" title="Read aloud"><img src="img/icon/volume-2.png" class="theme-icon"></span>
           </div>
           <div class="preview-face ${previewFlipped?'def':''}" onclick="togglePreviewFlip()">${previewFlipped ? backFaceHtml(pt, '(no definition)') : frontFaceHtml(pt)}</div>
-          <div class="preview-footer"><span><img src="img/icon/keyboard.png" class="theme-icon"></span> Press <kbd>Space</kbd> or click on the card to flip</div>
+          <div class="preview-footer"><kbd>Space</kbd></div>
           <div class="preview-nav">
             <button class="fc-nav" title="Previous" onclick="previewPrev()"><img src="img/icon/chevron-left.png" class="theme-icon"></button>
             <span class="preview-count">${previewIndex+1} / ${s.terms.length}</span>
@@ -74,7 +94,7 @@ function renderDetail(){
         </div>
         ${dueIds.length ? `
           <button class="review-due-btn" onclick="startDueReview()">
-            <span>Review ${dueIds.length} due term${dueIds.length>1?'s':''}</span><span class="review-due-go">Start →</span>
+            <span>Review (${dueIds.length})</span><span class="review-due-go">Start →</span>
           </button>` : ''}
         <div class="mode-tabs">
           <div class="mode-tab" onclick="go('flashcards')">Flashcards</div>
@@ -83,8 +103,8 @@ function renderDetail(){
         </div>
         <div class="term-section">
           <div class="term-list-header sticky-bar">
-            <h3>Terms in this set (${s.terms.length})</h3>
-            <button class="btn-ghost" onclick="toggleHideDefinitions()">${hideDefinitions?'Show definitions':'Hide definitions'}</button>
+            <h3>Vocab (${s.terms.length})</h3>
+            <button class="btn-ghost" onclick="toggleHideDefinitions()">${hideDefinitions?'Show':'Hide'}</button>
           </div>
           <div class="ruled">${s.terms.map(t=>termRowHtml(t)).join('')}</div>
         </div>
@@ -227,7 +247,7 @@ function termRowHtml(t){
           ${t.pos || t.phonetic ? `<div class="t-meta">${t.pos?`<span class="pos-tag">${escapeHtml(t.pos)}</span>`:''} ${t.phonetic?`<span class="phonetic">${escapeHtml(t.phonetic)}</span>`:''}</div>` : ''}
         </div>
         <div class="sep"></div>
-        <div class="d ${hideDefinitions?'hidden-def':''}">
+        <div class="d ${hideDefinitions?'revealable':''} ${hideDefinitions && !revealedIds.has(t.id)?'hidden-def':''}" ${hideDefinitions?`onclick="toggleRevealTerm('${t.id}')" title="Click to show / hide this definition"`:''}>
           <div>${escapeHtml(t.definition)}</div>
           ${t.example ? `<div class="d-example">“${escapeHtml(t.example)}”</div>` : ''}
         </div>
@@ -280,5 +300,22 @@ function saveInlineEdit(termId){
 
 function toggleHideDefinitions(){
   hideDefinitions = !hideDefinitions;
+  revealedIds.clear();
+  saveHideState();
   renderDetail();
+}
+
+function toggleRevealTerm(termId){
+  if(!hideDefinitions) return;
+  const s = getSet(currentSetId);
+  if(!s) return;
+  if(revealedIds.has(termId)) revealedIds.delete(termId); else revealedIds.add(termId);
+  if(s.terms.length && s.terms.every(t=>revealedIds.has(t.id))){
+    hideDefinitions = false;
+    revealedIds.clear();
+  }
+  saveHideState();
+  const y = window.scrollY;
+  renderDetail();
+  window.scrollTo(0, y);
 }

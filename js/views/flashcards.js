@@ -29,11 +29,12 @@ function renderFlashcards(){
 
   root.innerHTML = `
     <div class="study-screen">
+     <div class="study-sheet">
       <div class="study-top">
         <div class="left">Flashcards</div>
         <div class="center"><span>${session.idx+1} / ${session.order.length}</span><span class="setname">${escapeHtml(s.title)}</span></div>
         <div class="right">
-          
+          ${studyThemeBtnHtml()}
           <button class="icon-btn" title="Options" onclick="fcOpenOptions()"><img src="img/icon/settings.png" class="theme-icon"></button>
           <button class="icon-btn" title="Close" onclick="go('detail')"><img src="img/icon/x.png" class="theme-icon"></button>
         </div>
@@ -63,6 +64,7 @@ function renderFlashcards(){
           </div>
         </div>
       </div>
+     </div>
       ${session.optionsOpen ? fcOptionsModalHtml() : ''}
     </div>
   `;

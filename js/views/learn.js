@@ -137,10 +137,12 @@ function renderLearn(){
 
   root.innerHTML = `
     <div class="study-screen">
+     <div class="study-sheet">
       <div class="study-top">
         <div class="left">${escapeHtml(session.reviewLabel || 'Learn')}</div>
         <div class="center"><span>${doneCount} / ${session.roundTotal}</span><span class="setname">${escapeHtml(s.title)}</span></div>
         <div class="right">
+          ${studyThemeBtnHtml()}
           <button class="icon-btn" title="Settings" onclick="learnOpenSettings()"><img src="img/icon/settings.png" class="theme-icon"></button>
           <button class="icon-btn" onclick="go('detail')"><img src="img/icon/x.png" class="theme-icon"></button>
         </div>
@@ -171,6 +173,7 @@ function renderLearn(){
           <div class="kbd-hint"><img src="img/icon/keyboard.png" class="theme-icon"> ${judging ? `<kbd>1</kbd> wrong · <kbd>2</kbd> right · <kbd>Enter</kbd> use the highlighted choice` : `${q.options ? `<kbd>1</kbd>–<kbd>${q.options.length}</kbd> choose · <kbd>?</kbd> don't know · ` : ''}<kbd>Enter</kbd> ${q.options ? 'continue' : 'check / continue'}`}</div>
         </div>
       </div>
+     </div>
       ${session.settingsOpen ? learnSettingsModalHtml() : ''}
     </div>
   `;
