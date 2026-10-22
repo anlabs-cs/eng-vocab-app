@@ -3,6 +3,8 @@ function isTypingTarget(el){
   return !!el && (el.tagName==='INPUT' || el.tagName==='TEXTAREA' || el.tagName==='SELECT' || el.isContentEditable);
 }
 
+let lastThemeToggle = 0;
+
 document.addEventListener('keydown', (e)=>{
   if(DriveSync.needsLogin()) return; // login screen is showing
   // also check e.target: an input's own handler may re-render and drop focus
@@ -36,8 +38,19 @@ document.addEventListener('keydown', (e)=>{
   // let a focused button handle its own Enter/Space
   if((key==='Enter' || e.code==='Space') && document.activeElement && document.activeElement.tagName==='BUTTON') return;
 
-  // anywhere
-  if(key==='d' && !e.shiftKey){ toggleTheme(); return; }
+  // Backspace that a Vietnamese IME (Unikey/Telex: "dd" -> "đ") sends right after
+  // a theme toggle must not trigger shortcuts such as flashcard undo
+  if(key==='Backspace' && Date.now() - lastThemeToggle < 250){ e.preventDefault(); return; }
+
+  // anywhere. Matches the physical D key (e.code) and 'đ', so it also works
+  // with a Vietnamese input method; study screens switch in place (no re-render)
+  if((e.code==='KeyD' || key==='d' || key==='đ') && !e.shiftKey && !e.isComposing){
+    e.preventDefault();
+    lastThemeToggle = Date.now();
+    if(view==='flashcards' || view==='learn' || view==='test') studyToggleTheme();
+    else toggleTheme();
+    return;
+  }
 
   if(view==='home'){
     if(key==='/'){
