@@ -36,7 +36,6 @@ const DriveSync = (function(){
   let tokenClient = null;
   let tokenWaiter = null;
   let tokenPromise = null;
-  let gestureArmed = false;
   let skipUnloadWarning = false;
   let login = { busy: false, error: '' }; // login screen state
 
@@ -146,30 +145,11 @@ const DriveSync = (function(){
     throw new Error('needs gesture');
   }
 
-  /* The access token lasts ~1h and Google only renews it through a popup,
-     which browsers block unless the user just clicked. So when it has
-     expired we wait for the next click/keypress anywhere in the app and
-     renew it then (the popup closes by itself). The user stays signed in. */
-  function armTokenRefresh(){
-    if(gestureArmed) return;
-    gestureArmed = true;
-    const onGesture = () => {
-      document.removeEventListener('click', onGesture, true);
-      document.removeEventListener('keydown', onGesture, true);
-      gestureArmed = false;
-      if(!isLinked() || storedToken() || tokenPromise) return;
-      requestToken('').then(() => {
-        needsRelogin = false;
-        syncNow('resume');
-      }, e => {
-        console.warn('Token refresh failed:', e);
-        if(/popup_failed_to_open/.test(e.message)) armTokenRefresh(); // blocked: try on the next click
-        else setStatus('signedout', true);
-      });
-    };
-    document.addEventListener('click', onGesture, true);
-    document.addEventListener('keydown', onGesture, true);
-  }
+  /* The access token lasts ~1h and Google only renews it through a popup.
+     We never open that popup on our own (an old version did it on the next random
+     click, which made a popup flash open and shut). The user renews the session
+     on purpose with the "Reconnect" button; until then data stays safe locally. */
+  function tokenExpired(){ return isLinked() && !storedToken(); }
 
   async function authFetch(url, opts, retried){
     const token = await getToken();
@@ -197,7 +177,7 @@ const DriveSync = (function(){
 
   async function signIn(){
     if(!configured()){
-      alert('Chưa cấu hình GOOGLE_CLIENT_ID trong js/drivesync.js.');
+      alert('GOOGLE_CLIENT_ID is not configured in js/drivesync.js.');
       return;
     }
     if(isLinked()) return relogin();
@@ -209,8 +189,8 @@ const DriveSync = (function(){
       const cancelled = /popup_closed|access_denied/.test(e.message);
       const offline = /gis unavailable/.test(e.message);
       setLogin({ busy: false, error: cancelled ? '' : offline
-        ? 'Không kết nối được tới Google. Kiểm tra kết nối mạng rồi thử lại.'
-        : 'Không mở được cửa sổ đăng nhập Google. Hãy cho phép cửa sổ bật lên (popup) rồi thử lại.' });
+        ? 'Could not reach Google. Check your connection and try again.'
+        : 'Could not open the Google sign-in window. Allow pop-ups for this site and try again.' });
       return;
     }
     try{
@@ -219,7 +199,7 @@ const DriveSync = (function(){
       console.warn('Sign-in failed:', e);
       ls(DRIVE_TOKEN_KEY, null);
       ls(DRIVE_META_KEY, null);
-      setLogin({ busy: false, error: 'Không tải được dữ liệu từ Google Drive. Kiểm tra kết nối mạng rồi thử lại.' });
+      setLogin({ busy: false, error: 'Could not load your data from Google Drive. Check your connection and try again.' });
       return;
     }
     setLogin({ busy: false, error: '' });
@@ -271,7 +251,7 @@ const DriveSync = (function(){
   async function signOut(){
     if(loadMeta().dirty){
       await syncNow('signout');
-      if(loadMeta().dirty && !confirm('Một số thay đổi chưa được lưu lên Google Drive và sẽ bị mất khỏi máy này khi đăng xuất. Vẫn đăng xuất?')) return;
+      if(loadMeta().dirty && !confirm('Some changes have not been saved to Google Drive and will be removed from this device when you sign out. Sign out anyway?')) return;
     }
     clearTimeout(autosaveTimer); clearTimeout(retryTimer);
     // the token is only dropped, not revoked: revoking would also sign out the user's other devices
@@ -390,9 +370,8 @@ const DriveSync = (function(){
     }catch(e){
       const msg = String(e && e.message);
       if(msg === 'needs gesture'){
-        // token expired: still signed in, sync resumes on the next click
-        armTokenRefresh();
-        setStatus(loadMeta().dirty ? 'unsynced' : 'idle');
+        // token expired: still signed in, nothing is lost. Only warn if there are unsaved changes.
+        setStatus(loadMeta().dirty ? 'unsynced' : 'idle', !!loadMeta().dirty);
         return;
       }
       console.warn('Drive sync failed:', e);
@@ -471,14 +450,14 @@ const DriveSync = (function(){
   /* ---------- UI ---------- */
   function statusText(){
     const meta = loadMeta();
-    if(status === 'syncing') return 'Đang lưu...';
-    if(status === 'unsynced' || status === 'error') return 'Chưa đồng bộ';
-    if(status === 'signedout') return 'Chưa đăng nhập';
+    if(status === 'syncing') return 'Saving...';
+    if(status === 'unsynced' || status === 'error') return 'Not synced';
+    if(status === 'signedout') return 'Signed out';
     if(meta.lastSavedAt && !meta.dirty){
       const d = new Date(meta.lastSavedAt);
-      return 'Đã lưu lúc ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+      return 'Saved at ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
     }
-    return meta.dirty ? 'Chưa đồng bộ' : 'Đã đăng nhập';
+    return meta.dirty ? 'Not synced' : 'Signed in';
   }
 
   let panelOpen = false;
@@ -490,9 +469,9 @@ const DriveSync = (function(){
   }
 
   function chipText(){
-    if(needsRelogin) return 'Cần đăng nhập lại';
+    if(needsRelogin) return 'Reconnect to save';
     const t = statusText();
-    return t.replace('Đã lưu lúc ', 'Đã lưu ');
+    return t.replace('Saved at ', 'Saved ');
   }
 
   function panelHtml(meta){
@@ -500,19 +479,19 @@ const DriveSync = (function(){
       <div class="drive-panel" onclick="event.stopPropagation()">
         <div class="drive-panel-head">
           <div class="drive-panel-title">Google Drive</div>
-          <div class="drive-panel-email">${escapeHtml(meta.email || 'Đã đăng nhập')}</div>
+          <div class="drive-panel-email">${escapeHtml(meta.email || 'Signed in')}</div>
         </div>
         <div class="drive-panel-status ${statusClass()}"><span class="drive-dot"></span>${escapeHtml(statusText())}</div>
-        ${needsRelogin ? '<p class="drive-panel-note">Phiên đăng nhập đã hết hạn. Dữ liệu vẫn được giữ trên máy này.</p>' : ''}
+        ${(needsRelogin || tokenExpired()) ? '<p class="drive-panel-note">Your session has expired. Your data is still kept on this device.</p>' : ''}
         <label class="drive-switch-row">
-          <span>Tự động lưu</span>
+          <span>Auto-save</span>
           <span class="drive-switch"><input type="checkbox" ${meta.autosave ? 'checked' : ''} onchange="DriveSync.setAutosave(this.checked)"><i></i></span>
         </label>
         <div class="drive-panel-actions">
-          ${needsRelogin
-            ? '<button class="btn-primary" onclick="DriveSync.signIn()">Đăng nhập lại</button>'
-            : `<button class="btn-primary" onclick="DriveSync.syncNow('manual')" ${status === 'syncing' ? 'disabled' : ''}>Lưu ngay</button>`}
-          <button class="btn-ghost" onclick="DriveSync.signOut()">Đăng xuất</button>
+          ${(needsRelogin || tokenExpired())
+            ? '<button class="btn-primary" onclick="DriveSync.signIn()">Reconnect</button>'
+            : `<button class="btn-primary" onclick="DriveSync.syncNow('manual')" ${status === 'syncing' ? 'disabled' : ''}>Save now</button>`}
+          <button class="btn-ghost" onclick="DriveSync.signOut()">Sign out</button>
         </div>
       </div>`;
   }
@@ -520,7 +499,7 @@ const DriveSync = (function(){
   function uiHtml(){
     const meta = loadMeta();
     if(!meta.linked){
-      return '<button class="btn-ghost drive-signin" onclick="DriveSync.signIn()" title="Lưu và đồng bộ dữ liệu qua Google Drive"><span class="drive-dot"></span>Đăng nhập Google</button>';
+      return '<button class="btn-ghost drive-signin" onclick="DriveSync.signIn()" title="Save and sync your data with Google Drive"><span class="drive-dot"></span>Sign in with Google</button>';
     }
     return `
       <div class="drive-wrap">
@@ -541,15 +520,15 @@ const DriveSync = (function(){
         <div class="login-card">
           <img src="img/icon/icon-512.png" class="login-logo" alt="">
           <div class="login-brand">EngVocab</div>
-          <h1 class="login-title">Đăng nhập để học tiếp</h1>
-          <p class="login-lead">Bộ từ, tiến độ ôn tập và chuỗi ngày học được lưu vào Google Drive của bạn — mở trên máy nào cũng thấy.</p>
+          <h1 class="login-title">Sign in to keep learning</h1>
+          <p class="login-lead">Your sets, review progress and study streak are saved to your Google Drive, so they follow you to any device.</p>
           <button class="login-google" onclick="DriveSync.signIn()" ${login.busy ? 'disabled' : ''}>
-            ${login.busy ? '<span class="login-spinner"></span>Đang đăng nhập...' : GOOGLE_G + 'Tiếp tục với Google'}
+            ${login.busy ? '<span class="login-spinner"></span>Signing in...' : GOOGLE_G + 'Continue with Google'}
           </button>
           ${login.error ? `<p class="login-error" role="alert">${escapeHtml(login.error)}</p>` : ''}
-          <div class="login-or"><span>hoặc</span></div>
-          <button class="link-btn" onclick="DriveSync.useAsGuest()" ${login.busy ? 'disabled' : ''}>Dùng không cần đăng nhập</button>
-          <p class="login-note">Không đăng nhập thì dữ liệu chỉ lưu trên trình duyệt này.</p>
+          <div class="login-or"><span>or</span></div>
+          <button class="link-btn" onclick="DriveSync.useAsGuest()" ${login.busy ? 'disabled' : ''}>Continue without signing in</button>
+          <p class="login-note">If you don't sign in, your data is only stored in this browser.</p>
         </div>
       </div>`;
   }

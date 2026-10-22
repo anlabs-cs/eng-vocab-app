@@ -1,4 +1,4 @@
-const CACHE_NAME = 'engvocab-cache-v10';
+const CACHE_NAME = 'engvocab-cache-v11';
 const PRECACHE_URLS = [
   './',
   './index.html',
