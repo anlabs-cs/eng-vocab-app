@@ -1362,3 +1362,30 @@ body { background: var(--desk); }
   .ruled .term-row .t { font-size: 20px; }
   .ruled .term-row .d { font-size: 17.5px; }
 }
+
+/* ---------- Written answers: you decide right / wrong ---------- */
+.judge-box { margin-top: 16px; padding: 14px 16px; border: 1px solid var(--rule-strong); border-radius: var(--radius); background: var(--bg); }
+.judge-answer { display: flex; flex-direction: column; gap: 2px; margin-bottom: 10px; }
+.judge-label { font-size: 12.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+.judge-answer strong { font-size: 20px; line-height: 1.35; word-break: break-word; }
+.judge-q { font-size: 14.5px; color: var(--ink-2); margin: 10px 0 8px; }
+.judge-actions { display: flex; gap: 10px; }
+.judge-actions.inline { margin-top: 12px; max-width: 360px; }
+.judge-btn {
+  flex: 1;
+  padding: 10px 12px;
+  font-size: 15.5px;
+  font-weight: 700;
+  background: var(--bg);
+  border: 1.5px solid var(--rule-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.judge-btn kbd { margin-left: 6px; opacity: .7; }
+.judge-btn.bad { color: var(--bad); }
+.judge-btn.ok { color: var(--good); }
+.judge-btn:hover { border-color: var(--ink); }
+.judge-btn.suggested { border-color: currentColor; box-shadow: inset 0 0 0 1px currentColor; }
+.judge-btn.bad.active { background: var(--bad-soft); border-color: var(--bad); }
+.judge-btn.ok.active { background: var(--good-soft); border-color: var(--good); }
+.review-note { margin: 4px 0 6px; font-size: 14.5px; color: var(--ink-2); }

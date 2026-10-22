@@ -5,7 +5,9 @@ function isTypingTarget(el){
 
 document.addEventListener('keydown', (e)=>{
   if(DriveSync.needsLogin()) return; // login screen is showing
-  const typing = isTypingTarget(document.activeElement);
+  // also check e.target: an input's own handler may re-render and drop focus
+  // before the event bubbles up here, and that same Enter must not act twice
+  const typing = isTypingTarget(document.activeElement) || isTypingTarget(e.target);
   const mod = e.ctrlKey || e.metaKey;
   const key = e.key.length===1 ? e.key.toLowerCase() : e.key;
 
@@ -75,6 +77,14 @@ document.addEventListener('keydown', (e)=>{
   }
   else if(view==='learn' && session.currentQ && !session.settingsOpen){
     const q = session.currentQ;
+    // written answer waiting for the learner's own verdict: 1 = wrong, 2 = right,
+    // Enter = take the highlighted (suggested) choice
+    if(session.judging && (key==='1' || key==='2' || key==='Enter')){
+      e.preventDefault();
+      learnJudge(key==='Enter' ? !!session.suggested : key==='2');
+      return;
+    }
+    if(session.judging && e.code==='Space'){ e.preventDefault(); return; }
     if(!session.answered && q.options && /^[1-9]$/.test(key)){
       const opt = q.options[Number(key) - 1];
       if(opt !== undefined){ e.preventDefault(); learnAnswer(opt); }

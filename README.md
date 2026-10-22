@@ -14,9 +14,13 @@
 - **Giao diện thân thiện:** Dark Mode, dùng tốt trên điện thoại, có [phím tắt](#phím-tắt) cho các thao tác chính.
 
 ## Phím tắt
-Phím tắt không hoạt động khi đang gõ trong ô nhập (trừ các tổ hợp có `Ctrl`). Nhấn `Esc` để thoát khỏi ô nhập.
 
-| Màn hình | Phím | Tác dụng |
+Phím tắt không hoạt động khi đang gõ trong ô nhập (trừ các tổ hợp có modifier). Nhấn `Esc` để thoát khỏi ô nhập.
+
+### Dành cho macOS
+Trên Mac, dùng phím `⌘ Command` thay cho `Ctrl` (cả `⌘` lẫn `Ctrl` đều hoạt động). `⌫` là phím `Delete` (xoá lùi), `↩` là `Return`/`Enter`.
+
+| Màn hình | Phím (macOS) | Tác dụng |
 |---|---|---|
 | Mọi nơi | `D` | Bật/tắt Dark Mode |
 | | `Esc` | Đóng menu/hộp thoại, hoặc quay lại màn hình trước (không áp dụng khi đang sửa bộ từ hay làm bài test, để tránh mất dữ liệu) |
@@ -28,23 +32,38 @@ Phím tắt không hoạt động khi đang gõ trong ô nhập (trừ các tổ
 | | `F` / `L` / `T` | Mở Flashcards / Learn / Test |
 | | `R` | Ôn các từ đến hạn |
 | | `E` | Sửa bộ từ |
-| Sửa bộ từ | `Enter` (ở ô Definition) | Dùng nghĩa gợi ý (khi ô còn trống) |
-| | `Ctrl` + `Enter` | Thêm thẻ mới và nhảy tới ô Term |
-| | `Ctrl` + `S` | Lưu bộ từ |
+| Sửa bộ từ | `↩` (ở ô **Term**) | Chuyển sang ô Definition của cùng thẻ |
+| | `↩` (ở ô **Definition**) | Dùng nghĩa gợi ý (khi ô còn trống) |
+| | `⌘` + `↩` | Thêm thẻ mới và nhảy tới ô Term |
+| | `⌘` + `S` | Lưu bộ từ |
 | Flashcards | `Space` / `↑` / `↓` | Lật thẻ |
 | | `→` hoặc `2` | Đã thuộc |
 | | `←` hoặc `1` | Chưa thuộc |
-| | `Z` / `Backspace` | Hoàn tác thẻ vừa đánh dấu |
+| | `Z` / `⌫` | Hoàn tác thẻ vừa đánh dấu |
 | | `S` | Đọc to mặt thẻ đang hiện |
 | | `O` | Mở tuỳ chọn |
-| Learn | `1`–`9` | Chọn đáp án |
+| Learn (trắc nghiệm) | `1`–`9` | Chọn đáp án |
 | | `?` | Không biết |
-| | `Enter` / `Space` | Câu tiếp theo (sau khi trả lời) |
+| | `↩` / `Space` | Câu tiếp theo (sau khi trả lời) |
 | | `S` | Đọc to từ |
-| Tạo bài Test | `Enter` | Tạo bài test |
-| Làm bài Test | `Ctrl` + `Enter` | Nộp bài |
+| Learn (tự luận) | `↩` | Kiểm tra: hiện đáp án đúng |
+| | `1` / `2` | Tự chọn **sai** / **đúng** (sau khi xem đáp án) |
+| | `↩` (sau khi xem đáp án) | Chọn theo gợi ý được tô sáng |
+| Tạo bài Test | `↩` | Tạo bài test |
+| Làm bài Test | `⌘` + `↩` | Nộp bài |
 | Kết quả | `R` | Học lại các từ sai |
-| | `Enter` | Quay lại bộ từ |
+| | `↩` | Quay lại bộ từ |
+
+> Lưu ý khi gõ tiếng Việt (Unikey/Telex/VNI): phím `Enter` dùng để xác nhận từ đang gõ sẽ không bị tính là phím tắt.
+> Nếu `⌘` + `S` mở hộp thoại lưu của trình duyệt, hãy bấm vào trang web một lần rồi thử lại.
+
+### Windows / Linux
+Giống bảng trên, chỉ cần thay `⌘` bằng `Ctrl` và `⌫` bằng `Backspace`.
+
+## Câu tự luận: bạn tự quyết định đúng/sai
+Vì tiếng Việt có dấu nên rất khó gõ khớp hoàn toàn, ứng dụng **không tự chấm** câu tự luận:
+- **Learn:** gõ đáp án rồi bấm `Enter` / **Check** → ứng dụng hiện đáp án đúng → bạn bấm **I was right** (`2`) hoặc **I was wrong** (`1`). Nút nào ứng dụng đoán đúng sẽ được tô sáng (chỉ là gợi ý), nhưng quyết định là của bạn.
+- **Test:** khi nộp bài, ứng dụng chấm tạm; ở trang kết quả mỗi câu tự luận có nút **Right / Wrong** để bạn sửa lại, điểm và danh sách từ sai tự cập nhật theo.
 
 ## Định dạng nhập danh sách
 Mỗi dòng một từ:

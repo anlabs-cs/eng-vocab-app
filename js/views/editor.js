@@ -36,6 +36,7 @@ or Tab / CSV columns: term, definition, example, word type, phonetic."></textare
       </div>
       <button class="add-row-btn" onclick="addRow()">Add a card</button>
       <div class="editor-shortcuts">
+        <span><kbd>Enter</kbd> in Term: go to Definition</span>
         <span><kbd>Enter</kbd> in Definition: use suggestion</span>
         <span><kbd>Ctrl</kbd> + <kbd>Enter</kbd> new card</span>
         <span><kbd>Ctrl</kbd> + <kbd>S</kbd> save set</span>
@@ -58,7 +59,7 @@ function editorRowHtml(t, i) {
         <div class="editor-main">
           <div class="editor-col">
             <span class="field-label">Term</span>
-            <input type="text" class="term-input" value="${escapeAttr(t.term)}" placeholder="e.g. accommodation">
+            <input type="text" class="term-input" value="${escapeAttr(t.term)}" placeholder="e.g. accommodation" onkeydown="termKeydown(event, '${t.id}')">
           </div>
           <div class="editor-col">
             <span class="field-label">Definition</span>
@@ -161,6 +162,19 @@ function acceptSuggestion(rowId) {
   delete suggBox.dataset.value;
   defInput.focus();
   defInput.setSelectionRange(defInput.value.length, defInput.value.length);
+}
+
+/* Enter in the Term field: jump to the Definition field of the same card
+   (focusing it also triggers the translation suggestion). Ignored during IME
+   composition so confirming a word in Unikey / Telex doesn't skip the field. */
+function termKeydown(e, rowId) {
+  if (e.key !== 'Enter' || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+  if (e.isComposing || e.keyCode === 229) return;
+  const row = document.querySelector(`.editor-row[data-id="${rowId}"]`);
+  const defInput = row && row.querySelector('.def-input');
+  if (!defInput) return;
+  e.preventDefault();
+  defInput.focus();
 }
 
 /* Enter in the Definition field: use the suggestion (only while the field is

@@ -36,9 +36,29 @@ function renderResults(){
       <div class="rstat"><div class="n" style="color:var(--bad)">${session.total-session.correct}</div><div class="l">Wrong</div></div>
     `;
     retryFn = "go('test-setup')";
+    const hasWritten = session.questions.some(q=>q.type==='written');
     reviewHtml = `
       <div class="term-list-header"><h3>Answer review</h3></div>
+      ${hasWritten ? `<div class="review-note">Written answers: you decide if each one was right or wrong. Tap <strong>Right</strong> / <strong>Wrong</strong> to change it — the score updates.</div>` : ''}
       ${session.questions.map((q,i)=>{
+        if(q.type==='written'){
+          const prompt = q.answerWithTerm ? q.term.definition : q.term.term;
+          const answer = q.answerWithTerm ? q.term.term : q.term.definition;
+          return `
+            <div class="test-q">
+              <div class="qn">Question ${i+1}
+                <span class="review-tag ${q.isCorrect?'correct':'wrong'}">${q.isCorrect?'Correct':'Wrong'}</span>
+              </div>
+              <div class="qterm">${escapeHtml(prompt)}</div>
+              <div style="color:var(--ink-3);">Your answer: <strong style="color:var(--ink);">${escapeHtml(q.userAnswer || '(empty)')}</strong></div>
+              <div style="color:var(--ink-3);">Correct answer: <strong style="color:var(--ink);">${escapeHtml(answer)}</strong></div>
+              <div class="judge-actions inline">
+                <button class="judge-btn bad${q.isCorrect?'':' active'}" onclick="setWrittenVerdict(${i}, false)">✗ Wrong</button>
+                <button class="judge-btn ok${q.isCorrect?' active':''}" onclick="setWrittenVerdict(${i}, true)">✓ Right</button>
+              </div>
+            </div>
+          `;
+        }
         if(q.type==='matching'){
           const rows = q.terms.map(t=>{
             const userDefId = q.matches[t.id];
@@ -101,4 +121,34 @@ function retryMissed(){
   if(!ids.length) return;
   if(session.mode === 'flashcards') go('flashcards', {onlyIds: ids});
   else go('learn', {onlyIds: ids, reviewLabel: 'Missed terms'});
+}
+
+/* Test: the learner's own verdict on a written answer. Undoes the learning
+   progress recorded at submit time and records the new verdict instead, then
+   recomputes the score and the "missed terms" list. */
+function setWrittenVerdict(i, correct){
+  const q = session.questions && session.questions[i];
+  if(!q || q.type !== 'written' || q.isCorrect === correct) return;
+  if(q.prevSnap) restoreTermState(currentSetId, q.term.id, q.prevSnap);
+  q.prevSnap = setTermMastery(currentSetId, q.term.id, correct);
+  q.isCorrect = correct;
+  recomputeTestResults();
+  const y = window.scrollY;
+  renderResults();
+  window.scrollTo(0, y);
+}
+
+function recomputeTestResults(){
+  let correct = 0;
+  const wrong = new Set();
+  session.questions.forEach(q=>{
+    if(q.type === 'matching'){
+      q.terms.forEach(t=>{
+        if(q.matches[t.id] === t.id) correct++; else wrong.add(t.id);
+      });
+    } else if(q.isCorrect) correct++;
+    else wrong.add(q.term.id);
+  });
+  session.correct = correct;
+  session.retryIds = [...wrong];
 }

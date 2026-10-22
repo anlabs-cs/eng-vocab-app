@@ -362,13 +362,16 @@ function submitTest(){
     if(q.type==='tf') isCorrect = (q.userAnswer===q.correctAnswer);
     else if(q.type==='mc') isCorrect = (q.userAnswer===(q.answerWithTerm?q.term.term:q.term.definition));
     else if(q.type==='written'){
+      // Only a first guess: on the results page the learner decides for
+      // themselves whether each written answer was right (see setWrittenVerdict).
       const target = q.answerWithTerm ? q.term.term : q.term.definition;
-      isCorrect = normalizeAnswer(q.userAnswer, lenient) === normalizeAnswer(target, lenient);
+      isCorrect = String(q.userAnswer||'').trim() !== '' && normalizeAnswer(q.userAnswer, lenient) === normalizeAnswer(target, lenient);
     }
     q.isCorrect = isCorrect;
     totalGraded++;
     if(isCorrect) correct++; else wrongIds.add(q.term.id);
-    setTermMastery(currentSetId, q.term.id, isCorrect);
+    const prevSnap = setTermMastery(currentSetId, q.term.id, isCorrect);
+    if(q.type==='written') q.prevSnap = prevSnap; // lets a changed verdict undo this update
   });
   recordStudyActivity();
   go('results', {mode:'test', correct, total:totalGraded, questions:qs, retryIds:[...wrongIds]});

@@ -94,8 +94,13 @@ function renderLearn(){
   if(!session.currentQ || session.currentQ.term.id!==termId){
     session.currentQ = buildLearnQuestion(s, termId);
     session.answered = false;
+    session.judging = false;
     session.selected = null;
   }
+  // Written answers are not auto-graded: after "Check" the learner sees the
+  // correct answer and decides for themselves (judging = waiting for that choice).
+  const judging = !!(session.answered && session.judging);
+  const judged = !!(session.answered && !session.judging);
   const q = session.currentQ;
   const doneCount = session.roundTotal - session.queue.length;
   const pct = Math.round((doneCount/session.roundTotal)*100);
@@ -121,11 +126,12 @@ function renderLearn(){
     </div>`;
   } else {
     bodyHtml = `
-      <input type="text" class="written-input${session.answered ? (session.wasCorrect ? ' correct' : ' wrong') : ''}" id="writtenInput" placeholder="${q.answerWithTerm?'Type the term...':'Type the definition...'}" value="${escapeAttr(session.answered ? (session.selected||'') : '')}" ${session.answered?'readonly':''}
-        onkeydown="if(event.key==='Enter'){ if(session.answered){ learnNext(); } else { learnSubmitWritten(); } }">
+      <input type="text" class="written-input${judged ? (session.wasCorrect ? ' correct' : ' wrong') : ''}" id="writtenInput" placeholder="${q.answerWithTerm?'Type the term...':'Type the definition...'}" value="${escapeAttr(session.answered ? (session.selected||'') : '')}" ${session.answered?'readonly':''}
+        onkeydown="if(event.key==='Enter' && !event.isComposing && event.keyCode!==229){ event.preventDefault(); if(!session.answered){ learnSubmitWritten(); } }">
       <div style="margin-top:14px; text-align:right;">
         ${!session.answered ? `<button class="btn-primary" onclick="learnSubmitWritten()">Check</button>` : ''}
       </div>
+      ${judging ? learnJudgeBoxHtml(q) : ''}
     `;
   }
 
@@ -145,12 +151,12 @@ function renderLearn(){
             <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
           </div>
 
-          <div id="feedbackBanner" class="feedback-banner ${session.answered ? (session.wasCorrect?'ok show':'bad show') : ''}">
-            ${session.answered ? (session.wasCorrect ? '<span class="tick">✓</span> Correct!' : `<img src="img/icon/x.png" class="theme-icon"> Incorrect — answer: ${escapeHtml(q.correct||'')}`) : ''}
-            ${session.answered && q.term.example ? `<div class="feedback-example">“${escapeHtml(q.term.example)}”</div>` : ''}
+          <div id="feedbackBanner" class="feedback-banner ${judged ? (session.wasCorrect?'ok show':'bad show') : ''}">
+            ${judged ? (session.wasCorrect ? '<span class="tick">✓</span> Correct!' : `<img src="img/icon/x.png" class="theme-icon"> Incorrect — answer: ${escapeHtml(q.correct||'')}`) : ''}
+            ${judged && q.term.example ? `<div class="feedback-example">“${escapeHtml(q.term.example)}”</div>` : ''}
           </div>
 
-          <div class="learn-card${session.answered ? (session.wasCorrect ? ' flash-ok' : ' flash-bad') : ''}">
+          <div class="learn-card${judged ? (session.wasCorrect ? ' flash-ok' : ' flash-bad') : ''}">
             <div class="learn-label">${q.answerWithTerm?'Definition':'Term'}<button class="icon-btn small" onclick="speak(${jsArg(q.term.term)},'en-US')" title="Read aloud"><img src="img/icon/volume-2.png" class="theme-icon" alt="Read aloud"></button></div>
             <div class="learn-term">${escapeHtml(q.answerWithTerm ? q.term.definition : q.term.term)}</div>
             ${!q.answerWithTerm && (q.term.pos || q.term.phonetic) ? `<div class="face-meta" style="margin:-8px 0 16px;">${q.term.pos?`<span class="pos-tag">${escapeHtml(q.term.pos)}</span>`:''} ${q.term.phonetic?`<span class="phonetic">${escapeHtml(q.term.phonetic)}</span>`:''}</div>` : ''}
@@ -160,18 +166,36 @@ function renderLearn(){
 
           <div class="learn-footer">
             <button class="link-btn" onclick="learnDontKnow()" ${session.answered?'disabled':''}>Don't know?</button>
-            ${session.answered ? `<button class="btn-primary" onclick="learnNext()">Continue <img src="img/icon/arrow-right.png" class="theme-icon"></button>` : ''}
+            ${judged ? `<button class="btn-primary" onclick="learnNext()">Continue <img src="img/icon/arrow-right.png" class="theme-icon"></button>` : ''}
           </div>
-          <div class="kbd-hint"><img src="img/icon/keyboard.png" class="theme-icon"> ${q.options ? `<kbd>1</kbd>–<kbd>${q.options.length}</kbd> choose · <kbd>?</kbd> don't know · ` : ''}<kbd>Enter</kbd> ${q.options ? 'continue' : 'check / continue'}</div>
+          <div class="kbd-hint"><img src="img/icon/keyboard.png" class="theme-icon"> ${judging ? `<kbd>1</kbd> wrong · <kbd>2</kbd> right · <kbd>Enter</kbd> use the highlighted choice` : `${q.options ? `<kbd>1</kbd>–<kbd>${q.options.length}</kbd> choose · <kbd>?</kbd> don't know · ` : ''}<kbd>Enter</kbd> ${q.options ? 'continue' : 'check / continue'}`}</div>
         </div>
       </div>
       ${session.settingsOpen ? learnSettingsModalHtml() : ''}
     </div>
   `;
-  if(!q.options){
+  if(!q.options && !session.answered){
     const el = document.getElementById('writtenInput');
     if(el) el.focus();
   }
+}
+
+/* After "Check" on a written question: show the correct answer and let the
+   learner decide whether their own answer counts (Vietnamese accents/typing
+   make exact matching unreliable). The auto-comparison is only a suggestion. */
+function learnJudgeBoxHtml(q){
+  const suggested = !!session.suggested;
+  return `
+    <div class="judge-box">
+      <div class="judge-answer"><span class="judge-label">Correct answer</span><strong>${escapeHtml(q.correct||'')}</strong></div>
+      ${q.term.example ? `<div class="feedback-example">“${escapeHtml(q.term.example)}”</div>` : ''}
+      <div class="judge-q">Was your answer right? You decide.</div>
+      <div class="judge-actions">
+        <button class="judge-btn bad${suggested?'':' suggested'}" onclick="learnJudge(false)">✗ I was wrong <kbd>1</kbd></button>
+        <button class="judge-btn ok${suggested?' suggested':''}" onclick="learnJudge(true)">✓ I was right <kbd>2</kbd></button>
+      </div>
+    </div>
+  `;
 }
 
 /* ---------- Settings modal (Options) ---------- */
@@ -344,6 +368,7 @@ function learnRestart(){
   session.roundTotal = session.queue.length;
   session.doneIds = new Set();
   session.answered = false;
+  session.judging = false;
   session.correctCount = 0;
   session.totalAnswered = 0;
   session.missedIds = [];
@@ -368,6 +393,7 @@ function learnAnswer(opt){
   renderLearn();
 }
 
+/* "Check" only reveals the answer; the learner then picks right/wrong. */
 function learnSubmitWritten(){
   if(session.answered) return;
   const el = document.getElementById('writtenInput');
@@ -376,9 +402,17 @@ function learnSubmitWritten(){
   const lenient = session.settings.grading === 'lenient';
   session.selected = val;
   session.answered = true;
-  const normVal = normalizeAnswer(val, lenient);
-  const normCorrect = normalizeAnswer(q.correct, lenient);
-  session.wasCorrect = normVal === normCorrect;
+  session.judging = true;
+  session.suggested = val.trim() !== '' && normalizeAnswer(val, lenient) === normalizeAnswer(q.correct, lenient);
+  renderLearn();
+}
+
+/* The learner's own verdict for a written answer (1 = wrong, 2 = right). */
+function learnJudge(correct){
+  if(!session.answered || !session.judging) return;
+  const q = session.currentQ;
+  session.judging = false;
+  session.wasCorrect = !!correct;
   session.totalAnswered++;
   if(session.wasCorrect) session.correctCount++;
   if(session.settings.soundEffects) learnPlayBeep(session.wasCorrect);
@@ -389,6 +423,7 @@ function learnSubmitWritten(){
 function learnDontKnow(){
   if(session.answered) return;
   session.answered = true;
+  session.judging = false;
   session.wasCorrect = false;
   session.selected = null;
   session.totalAnswered++;
@@ -410,5 +445,6 @@ function learnNext(){
   }
   session.currentQ = null;
   session.answered = false;
+  session.judging = false;
   renderLearn();
 }
