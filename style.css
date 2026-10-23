@@ -1431,3 +1431,39 @@ body { background: var(--desk); }
     0 14px 34px rgba(0, 0, 0, 0.45);
 }
 :root[data-theme="dark"] .modal-overlay { background: rgba(0, 0, 0, 0.62); }
+
+/* ---------- Help button + popup ---------- */
+.help-fab {
+  position: fixed;
+  left: 14px;
+  bottom: 14px;
+  z-index: 40;
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--rule-strong);
+  background: var(--paper);
+  color: var(--ink-2);
+  font-family: var(--serif);
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1;
+  box-shadow: var(--shadow);
+  opacity: .9;
+  transition: background .15s, color .15s, border-color .15s, opacity .15s;
+}
+.help-fab:hover { opacity: 1; background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.help-modal { max-width: 640px; max-height: 86vh; }
+.help-guide { margin: 6px 0 0; padding-left: 20px; font-size: 14px; line-height: 1.6; color: var(--ink-2); }
+.help-guide li { margin-bottom: 8px; }
+.help-guide code { font-size: 13px; }
+.help-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.help-table td, .help-table th { padding: 6px 8px; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; }
+.help-table .help-group th { padding-top: 14px; font-family: var(--serif); font-size: 15px; color: var(--ink); border-bottom-color: var(--rule-strong); }
+.help-keys { white-space: nowrap; width: 1%; }
+.help-contact { margin: 4px 0 0; font-size: 16px; font-weight: 600; user-select: text; }
+@media (max-width: 520px) { .help-fab { left: 10px; bottom: 10px; } .help-modal { padding: 22px 16px 18px; } }

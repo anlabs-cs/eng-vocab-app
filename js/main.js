@@ -7,6 +7,8 @@ let lastThemeToggle = 0;
 
 document.addEventListener('keydown', (e)=>{
   if(DriveSync.needsLogin()) return; // login screen is showing
+  // help popup open: Esc closes it, every other shortcut is paused
+  if(typeof helpIsOpen==='function' && helpIsOpen()){ if(e.key==='Escape') helpClose(); return; }
   // also check e.target: an input's own handler may re-render and drop focus
   // before the event bubbles up here, and that same Enter must not act twice
   const typing = isTypingTarget(document.activeElement) || isTypingTarget(e.target);
