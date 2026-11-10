@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.EngVocab" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:statusBarColor">#e6dfd0</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">#e6dfd0</item>
+    </style>
+</resources>

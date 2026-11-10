@@ -1,0 +1,453 @@
+/* =========================================================
+   LEARN MODE
+========================================================= */
+function defaultLearnSettings(){
+  return {
+    shuffle: true,
+    studyStarred: false,
+    soundEffects: false,
+    multipleChoice: true,
+    written: true,
+    answerWith: 'definition',   // 'definition' | 'term'
+    grading: 'exact',           // 'exact' | 'lenient'
+    tts: false
+  };
+}
+
+function learnPlayBeep(correct){
+  try{
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if(!AudioCtx) return;
+    const ctx = window._learnAudioCtx || (window._learnAudioCtx = new AudioCtx());
+    if(ctx.state === 'suspended') ctx.resume();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = correct ? 880 : 220;
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.25);
+  }catch(e){ /* ignore */ }
+}
+
+function buildLearnQuestion(s, termId){
+  const term = s.terms.find(t=>t.id===termId);
+  const settings = session.settings || defaultLearnSettings();
+  const answerWithTerm = settings.answerWith === 'both'
+    ? Math.random() < 0.5
+    : settings.answerWith === 'term';
+  const field = answerWithTerm ? 'term' : 'definition';
+  const pool = s.terms.filter(t=>t.id!==termId);
+  const wrongCount = Math.min(3, pool.length);
+  const wrongs = shuffle(pool).slice(0, wrongCount).map(t=>t[field]);
+  const options = shuffle([term[field], ...wrongs]);
+  // Decide question type based on settings, falling back sensibly if only one type enabled
+  let useChoice;
+  if(settings.multipleChoice && settings.written){
+    useChoice = s.terms.length > 3 ? Math.random() < 0.5 : true;
+    if(s.terms.length <= 3) useChoice = false; // not enough distractors, prefer written
+  } else if(settings.multipleChoice){
+    useChoice = true;
+  } else {
+    useChoice = false;
+  }
+  if(useChoice && s.terms.length <= 3) useChoice = false;
+  return { term, options: useChoice ? options : null, correct: term[field], answerWithTerm };
+}
+
+function learnBuildQueue(s, settings){
+  let base = s.terms;
+  if(Array.isArray(session.onlyIds)){ // review due terms / retry missed terms
+    const only = new Set(session.onlyIds);
+    const picked = s.terms.filter(t=>only.has(t.id));
+    if(picked.length) base = picked;
+  }
+  const pool = settings.studyStarred ? base.filter(t=>t.starred) : base;
+  const ids = pool.length ? pool.map(t=>t.id) : base.map(t=>t.id); // fall back if no starred terms
+  return settings.shuffle ? shuffle(ids) : ids;
+}
+
+function renderLearn(){
+  const s = getSet(currentSetId);
+  if(!s){ go('home'); return; }
+  if(!session.settings){
+    session.settings = defaultLearnSettings();
+  }
+  if(!session.queue){
+    session.queue = learnBuildQueue(s, session.settings);
+    session.roundTotal = session.queue.length;
+    session.doneIds = new Set();
+    session.answered = false;
+    session.correctCount = 0;
+    session.totalAnswered = 0;
+    session.missedIds = [];
+  }
+  session.queue = session.queue.filter(id=>s.terms.some(t=>t.id===id)); // drop deleted terms
+  if(session.queue.length===0){
+    recordStudyActivity();
+    go('results', {mode:'learn', correct:session.correctCount, total:session.totalAnswered, retryIds:session.missedIds || []});
+    return;
+  }
+  const termId = session.queue[0];
+  if(!session.currentQ || session.currentQ.term.id!==termId){
+    session.currentQ = buildLearnQuestion(s, termId);
+    session.answered = false;
+    session.judging = false;
+    session.selected = null;
+  }
+  // Written answers are not auto-graded: after "Check" the learner sees the
+  // correct answer and decides for themselves (judging = waiting for that choice).
+  const judging = !!(session.answered && session.judging);
+  const judged = !!(session.answered && !session.judging);
+  const q = session.currentQ;
+  const doneCount = session.roundTotal - session.queue.length;
+  const pct = Math.round((doneCount/session.roundTotal)*100);
+
+  if(session.settings.tts && session._lastSpokenTermId !== q.term.id){
+    session._lastSpokenTermId = q.term.id;
+    setTimeout(()=>speak(q.term.term, 'en-US'), 50);
+  }
+
+  let bodyHtml = '';
+  if(q.options){
+    bodyHtml = `<div class="choices">
+      ${q.options.map((opt,i)=>{
+        let cls='choice', mark='';
+        if(session.answered){
+          if(opt===q.correct){ cls+=' correct'; mark='<span class="mark ok" aria-hidden="true">✓</span>'; }
+          else if(opt===session.selected){ cls+=' wrong'; mark='<span class="mark bad" aria-hidden="true">✗</span>'; }
+        }
+        return `<button class="${cls}" ${session.answered?'disabled':''} onclick="learnAnswer(${jsArg(opt)})">
+          <span class="idx">${i+1}</span><span class="choice-text">${escapeHtml(opt||'(empty)')}</span>${mark}
+        </button>`;
+      }).join('')}
+    </div>`;
+  } else {
+    bodyHtml = `
+      <input type="text" class="written-input${judged ? (session.wasCorrect ? ' correct' : ' wrong') : ''}" id="writtenInput" placeholder="${q.answerWithTerm?'Type the term...':'Type the definition...'}" value="${escapeAttr(session.answered ? (session.selected||'') : '')}" ${session.answered?'readonly':''}
+        onkeydown="if(event.key==='Enter' && !event.isComposing && event.keyCode!==229){ event.preventDefault(); if(!session.answered){ learnSubmitWritten(); } }">
+      <div style="margin-top:14px; text-align:right;">
+        ${!session.answered ? `<button class="btn-primary" onclick="learnSubmitWritten()">Check</button>` : ''}
+      </div>
+      ${judging ? learnJudgeBoxHtml(q) : ''}
+    `;
+  }
+
+  root.innerHTML = `
+    <div class="study-screen">
+     <div class="study-sheet">
+      <div class="study-top">
+        <div class="left">${escapeHtml(session.reviewLabel || 'Learn')}</div>
+        <div class="center"><span>${doneCount} / ${session.roundTotal}</span><span class="setname">${escapeHtml(s.title)}</span></div>
+        <div class="right">
+          ${studyThemeBtnHtml()}
+          <button class="icon-btn" title="Settings" onclick="learnOpenSettings()"><img src="img/icon/settings.png" class="theme-icon"></button>
+          <button class="icon-btn" onclick="go('detail')"><img src="img/icon/x.png" class="theme-icon"></button>
+        </div>
+      </div>
+      <div class="study-body">
+        <div class="study-inner">
+          <div style="display:flex; align-items:center; margin-bottom:24px;">
+            <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+          </div>
+
+          <div id="feedbackBanner" class="feedback-banner ${judged ? (session.wasCorrect?'ok show':'bad show') : ''}">
+            ${judged ? (session.wasCorrect ? '<span class="tick">✓</span> Correct!' : `<img src="img/icon/x.png" class="theme-icon"> Incorrect — answer: ${escapeHtml(q.correct||'')}`) : ''}
+            ${judged && q.term.example ? `<div class="feedback-example">“${escapeHtml(q.term.example)}”</div>` : ''}
+          </div>
+
+          <div class="learn-card${judged ? (session.wasCorrect ? ' flash-ok' : ' flash-bad') : ''}">
+            <div class="learn-label">${q.answerWithTerm?'Definition':'Term'}<button class="icon-btn small" onclick="speak(${jsArg(q.term.term)},'en-US')" title="Read aloud"><img src="img/icon/volume-2.png" class="theme-icon" alt="Read aloud"></button></div>
+            <div class="learn-term">${escapeHtml(q.answerWithTerm ? q.term.definition : q.term.term)}</div>
+            ${!q.answerWithTerm && (q.term.pos || q.term.phonetic) ? `<div class="face-meta" style="margin:-8px 0 16px;">${q.term.pos?`<span class="pos-tag">${escapeHtml(q.term.pos)}</span>`:''} ${q.term.phonetic?`<span class="phonetic">${escapeHtml(q.term.phonetic)}</span>`:''}</div>` : ''}
+            <div class="learn-label" style="margin-bottom:10px;">${q.options?'Choose an answer':(q.answerWithTerm?'Type the term':'Type the definition')}</div>
+            ${bodyHtml}
+          </div>
+
+          <div class="learn-footer">
+            <button class="link-btn" onclick="learnDontKnow()" ${session.answered?'disabled':''}>Don't know?</button>
+            ${judged ? `<button class="btn-primary" onclick="learnNext()">Continue <img src="img/icon/arrow-right.png" class="theme-icon"></button>` : ''}
+          </div>
+          <div class="kbd-hint"><img src="img/icon/keyboard.png" class="theme-icon"> ${judging ? `<kbd>1</kbd> wrong · <kbd>2</kbd> right · <kbd>Enter</kbd> use the highlighted choice` : `${q.options ? `<kbd>1</kbd>–<kbd>${q.options.length}</kbd> choose · <kbd>?</kbd> don't know · ` : ''}<kbd>Enter</kbd> ${q.options ? 'continue' : 'check / continue'}`}</div>
+        </div>
+      </div>
+     </div>
+      ${session.settingsOpen ? learnSettingsModalHtml() : ''}
+    </div>
+  `;
+  if(!q.options && !session.answered){
+    const el = document.getElementById('writtenInput');
+    if(el) el.focus();
+  }
+}
+
+/* After "Check" on a written question: show the correct answer and let the
+   learner decide whether their own answer counts (Vietnamese accents/typing
+   make exact matching unreliable). The auto-comparison is only a suggestion. */
+function learnJudgeBoxHtml(q){
+  const suggested = !!session.suggested;
+  return `
+    <div class="judge-box">
+      <div class="judge-answer"><span class="judge-label">Correct answer</span><strong>${escapeHtml(q.correct||'')}</strong></div>
+      ${q.term.example ? `<div class="feedback-example">“${escapeHtml(q.term.example)}”</div>` : ''}
+      <div class="judge-q">Was your answer right? You decide.</div>
+      <div class="judge-actions">
+        <button class="judge-btn bad${suggested?'':' suggested'}" onclick="learnJudge(false)">✗ I was wrong <kbd>1</kbd></button>
+        <button class="judge-btn ok${suggested?' suggested':''}" onclick="learnJudge(true)">✓ I was right <kbd>2</kbd></button>
+      </div>
+    </div>
+  `;
+}
+
+/* ---------- Settings modal (Options) ---------- */
+
+function learnOpenSettings(){
+  session.settingsDraft = Object.assign({}, session.settings || defaultLearnSettings());
+  session.learnAccordion = { questionTypes:false, answerWith:false, grading:false };
+  session.settingsOpen = true;
+  renderLearn();
+}
+function learnCloseSettings(){
+  session.settingsOpen = false;
+  session.settingsDraft = null;
+  renderLearn();
+}
+
+function learnSettingsModalHtml(){
+  const s = getSet(currentSetId);
+  const draft = session.settingsDraft || defaultLearnSettings();
+  const acc = session.learnAccordion || {};
+  const hasStarred = s.terms.some(t=>t.starred);
+
+  return `
+    <div class="modal-overlay" onclick="learnCloseSettings()">
+      <div class="modal" onclick="event.stopPropagation()" style="position:relative;">
+        <button class="modal-close" onclick="learnCloseSettings()"><img src="img/icon/x.png" class="theme-icon"></button>
+        <h2>Options</h2>
+
+        <div class="pill-row">
+          <button class="pill-toggle ${draft.shuffle?'on':''}" onclick="learnDraftToggle('shuffle')"><img src="img/icon/shuffle.png" class="theme-icon"> Shuffle</button>
+          <button class="pill-toggle ${draft.studyStarred?'on':''} ${hasStarred?'':'disabled'}" ${hasStarred?'':'disabled'} onclick="learnDraftToggle('studyStarred')"><img src="img/icon/star1.png" class="theme-icon"> Study starred</button>
+          <button class="pill-toggle ${draft.soundEffects?'on':''}" onclick="learnDraftToggle('soundEffects')"><img src="img/icon/volume-2.png" class="theme-icon"> Sound effects</button>
+        </div>
+
+        <div class="accordion-row" onclick="learnToggleAccordion('questionTypes')">
+          <span>Question types</span>
+          <span class="chev ${acc.questionTypes?'open':''}"><img src="img/icon/chevron-down.png" class="theme-icon"></span>
+        </div>
+        ${acc.questionTypes ? `
+          <div class="accordion-panel">
+            <div class="modal-row">
+              <span>Multiple choice</span>
+              <button class="switch ${draft.multipleChoice?'on':''}" onclick="learnDraftToggleQuestionType('multipleChoice')"><span class="knob"></span></button>
+            </div>
+            <div class="modal-row">
+              <span>Written</span>
+              <button class="switch ${draft.written?'on':''}" onclick="learnDraftToggleQuestionType('written')"><span class="knob"></span></button>
+            </div>
+          </div>
+        ` : ''}
+
+        <div class="accordion-row" onclick="learnToggleAccordion('answerWith')">
+          <span>Answer with</span>
+          <span class="chev ${acc.answerWith?'open':''}"><img src="img/icon/chevron-down.png" class="theme-icon"></span>
+        </div>
+        ${acc.answerWith ? `
+          <div class="accordion-panel">
+            <div class="modal-row">
+              <span>Show</span>
+              <select class="select-input" onchange="learnDraftSet('answerWith', this.value)">
+                <option value="definition" ${draft.answerWith==='definition'?'selected':''}>Term <img src="img/icon/arrow-right.png" class="theme-icon"> Definition</option>
+                <option value="term" ${draft.answerWith==='term'?'selected':''}>Definition <img src="img/icon/arrow-right.png" class="theme-icon"> Term</option>
+                <option value="both" ${draft.answerWith==='both'?'selected':''}>Mix both directions</option>
+              </select>
+            </div>
+          </div>
+        ` : ''}
+
+        <div class="accordion-row" onclick="learnToggleAccordion('grading')">
+          <span>Grading options</span>
+          <span class="chev ${acc.grading?'open':''}"><img src="img/icon/chevron-down.png" class="theme-icon"></span>
+        </div>
+        ${acc.grading ? `
+          <div class="accordion-panel">
+            <div class="modal-row">
+              <span>Written answers</span>
+              <select class="select-input" onchange="learnDraftSet('grading', this.value)">
+                <option value="exact" ${draft.grading==='exact'?'selected':''}>Exact match</option>
+                <option value="lenient" ${draft.grading==='lenient'?'selected':''}>Lenient (ignore case/typos)</option>
+              </select>
+            </div>
+          </div>
+        ` : ''}
+
+        <div class="modal-row">
+          <span>Text to speech</span>
+          <button class="switch ${draft.tts?'on':''}" onclick="learnDraftToggle('tts')"><span class="knob"></span></button>
+        </div>
+
+        <div class="modal-row" style="cursor:pointer;" onclick="learnQuickStart('multipleChoice')">
+          <span>Multiple choice mode</span>
+          <span class="modal-row-link">Start <span><img src="img/icon/chevron-right.png" class="theme-icon"></span></span>
+        </div>
+        <div class="modal-row" style="cursor:pointer;" onclick="learnQuickStart('written')">
+          <span>Written mode</span>
+          <span class="modal-row-link">Start <span><img src="img/icon/chevron-right.png" class="theme-icon"></span></span>
+        </div>
+
+        <div class="modal-footer-row">
+          <button class="link-btn" style="color:var(--bad);" onclick="learnRestart()">Restart Learn</button>
+          <div style="display:flex; gap:10px;">
+            <button class="btn-ghost" onclick="learnCloseSettings()">Cancel</button>
+            <button class="btn-primary" onclick="learnSaveSettings()">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function learnToggleAccordion(key){
+  if(!session.learnAccordion) session.learnAccordion = {};
+  session.learnAccordion[key] = !session.learnAccordion[key];
+  renderLearn();
+}
+
+function learnDraftToggle(key){
+  if(!session.settingsDraft) session.settingsDraft = Object.assign({}, session.settings);
+  const draft = session.settingsDraft;
+  if(key === 'studyStarred'){
+    const s = getSet(currentSetId);
+    if(!s.terms.some(t=>t.starred)) return; // no-op if nothing starred
+  }
+  draft[key] = !draft[key];
+  renderLearn();
+}
+
+function learnDraftToggleQuestionType(key){
+  const draft = session.settingsDraft;
+  const other = key === 'multipleChoice' ? 'written' : 'multipleChoice';
+  if(draft[key] && !draft[other]) return; // keep at least one type enabled
+  draft[key] = !draft[key];
+  renderLearn();
+}
+
+function learnDraftSet(key, value){
+  if(!session.settingsDraft) session.settingsDraft = Object.assign({}, session.settings);
+  session.settingsDraft[key] = value;
+}
+
+function learnSaveSettings(){
+  const s = getSet(currentSetId);
+  const prev = session.settings || defaultLearnSettings();
+  const next = session.settingsDraft || prev;
+  const needsRebuild = prev.shuffle !== next.shuffle || prev.studyStarred !== next.studyStarred;
+  session.settings = next;
+  session.settingsOpen = false;
+  session.settingsDraft = null;
+  session.currentQ = null; // rebuild current question with fresh settings
+  if(needsRebuild){
+    session.queue = learnBuildQueue(s, session.settings);
+    session.roundTotal = session.queue.length;
+  }
+  renderLearn();
+}
+
+function learnQuickStart(type){
+  const draft = session.settingsDraft || Object.assign({}, session.settings);
+  draft.multipleChoice = (type === 'multipleChoice');
+  draft.written = (type === 'written');
+  session.settingsDraft = draft;
+  learnSaveSettings();
+}
+
+function learnRestart(){
+  const s = getSet(currentSetId);
+  const settings = session.settingsDraft || session.settings || defaultLearnSettings();
+  session.settings = settings;
+  session.queue = learnBuildQueue(s, settings);
+  session.roundTotal = session.queue.length;
+  session.doneIds = new Set();
+  session.answered = false;
+  session.judging = false;
+  session.correctCount = 0;
+  session.totalAnswered = 0;
+  session.missedIds = [];
+  session.currentQ = null;
+  session.settingsOpen = false;
+  session.settingsDraft = null;
+  renderLearn();
+}
+
+/* ---------- Answering ---------- */
+
+function learnAnswer(opt){
+  if(session.answered) return;
+  const q = session.currentQ;
+  session.selected = opt;
+  session.answered = true;
+  session.wasCorrect = (opt === q.correct);
+  session.totalAnswered++;
+  if(session.wasCorrect) session.correctCount++;
+  if(session.settings.soundEffects) learnPlayBeep(session.wasCorrect);
+  setTermMastery(currentSetId, q.term.id, session.wasCorrect);
+  renderLearn();
+}
+
+/* "Check" only reveals the answer; the learner then picks right/wrong. */
+function learnSubmitWritten(){
+  if(session.answered) return;
+  const el = document.getElementById('writtenInput');
+  const val = el ? el.value : '';
+  const q = session.currentQ;
+  const lenient = session.settings.grading === 'lenient';
+  session.selected = val;
+  session.answered = true;
+  session.judging = true;
+  session.suggested = val.trim() !== '' && normalizeAnswer(val, lenient) === normalizeAnswer(q.correct, lenient);
+  renderLearn();
+}
+
+/* The learner's own verdict for a written answer (1 = wrong, 2 = right). */
+function learnJudge(correct){
+  if(!session.answered || !session.judging) return;
+  const q = session.currentQ;
+  session.judging = false;
+  session.wasCorrect = !!correct;
+  session.totalAnswered++;
+  if(session.wasCorrect) session.correctCount++;
+  if(session.settings.soundEffects) learnPlayBeep(session.wasCorrect);
+  setTermMastery(currentSetId, q.term.id, session.wasCorrect);
+  renderLearn();
+}
+
+function learnDontKnow(){
+  if(session.answered) return;
+  session.answered = true;
+  session.judging = false;
+  session.wasCorrect = false;
+  session.selected = null;
+  session.totalAnswered++;
+  if(session.settings.soundEffects) learnPlayBeep(false);
+  setTermMastery(currentSetId, session.currentQ.term.id, false);
+  renderLearn();
+}
+
+function learnNext(){
+  const termId = session.queue[0];
+  if(session.wasCorrect){
+    session.queue.shift();
+  } else {
+    // move missed term to back of queue for retry
+    if(!session.missedIds) session.missedIds = [];
+    if(!session.missedIds.includes(termId)) session.missedIds.push(termId);
+    session.queue.shift();
+    session.queue.push(termId);
+  }
+  session.currentQ = null;
+  session.answered = false;
+  session.judging = false;
+  renderLearn();
+}

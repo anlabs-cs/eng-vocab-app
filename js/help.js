@@ -73,19 +73,22 @@ function helpOpen(){
   el.onclick = helpClose;
   el.innerHTML = `
     <div class="modal help-modal" role="dialog" aria-modal="true" aria-label="Trợ giúp" onclick="event.stopPropagation()">
-      <button class="modal-close" id="helpCloseBtn" title="Đóng" onclick="helpClose()"><img src="img/icon/x.png" class="theme-icon"></button>
-      <h2>Trợ giúp</h2>
+      <div class="help-modal-header">
+        <h2>Trợ giúp</h2>
+        <button class="modal-close" id="helpCloseBtn" title="Đóng" onclick="helpClose()"><img src="img/icon/x.png" class="theme-icon"></button>
+      </div>
+      <div class="help-modal-body">
+        <h3 class="modal-subtitle" style="margin-top:2px;">Hướng dẫn sử dụng</h3>
+        <ul class="help-guide">${guide}</ul>
 
-      <h3 class="modal-subtitle">Hướng dẫn sử dụng</h3>
-      <ul class="help-guide">${guide}</ul>
+        <h3 class="modal-subtitle">Phím tắt</h3>
+        <p class="modal-hint">Phím tắt không hoạt động khi đang gõ trong ô nhập (trừ các tổ hợp có <kbd>Ctrl</kbd>). Nhấn <kbd>Esc</kbd> để thoát khỏi ô nhập. Trên macOS dùng <kbd>⌘</kbd> thay cho <kbd>Ctrl</kbd>.</p>
+        <table class="help-table"><tbody>${keys}</tbody></table>
 
-      <h3 class="modal-subtitle">Phím tắt</h3>
-      <p class="modal-hint">Phím tắt không hoạt động khi đang gõ trong ô nhập (trừ các tổ hợp có <kbd>Ctrl</kbd>). Nhấn <kbd>Esc</kbd> để thoát khỏi ô nhập. Trên macOS dùng <kbd>⌘</kbd> thay cho <kbd>Ctrl</kbd>.</p>
-      <table class="help-table"><tbody>${keys}</tbody></table>
-
-      <h3 class="modal-subtitle">Liên hệ</h3>
-      <p class="modal-hint">Có góp ý hoặc gặp lỗi? Hãy gửi email về:</p>
-      <p class="help-contact">${HELP_EMAIL}</p>
+        <h3 class="modal-subtitle">Liên hệ</h3>
+        <p class="modal-hint">Có góp ý hoặc gặp lỗi? Hãy gửi email về:</p>
+        <p class="help-contact">${HELP_EMAIL}</p>
+      </div>
     </div>`;
   document.body.appendChild(el);
   const c = document.getElementById('helpCloseBtn');

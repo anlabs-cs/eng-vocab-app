@@ -44,9 +44,9 @@ function renderDetail(){
     ${topNav()}
     <div class="page">
       <div class="crumb"><a onclick="go('home')">← Library</a></div>
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-        <h1 class="set-title" style="margin-bottom:14px;">${escapeHtml(s.title)}</h1>
-        <div class="icon-btn-row">
+      <div class="set-header">
+        <h1 class="set-title">${escapeHtml(s.title)}</h1>
+        <div class="icon-btn-row set-header-actions">
           <button class="icon-btn round-btn" title="${s.starred?'Unsave':'Save set'}" onclick="toggleStarSet('${s.id}')">${s.starred?'<img src="img/icon/star2.png" class="theme-icon theme-icon-color">':'<img src="img/icon/star1.png" class="theme-icon">'}</button>
           <button class="icon-btn round-btn" title="Share" onclick="shareSet('${s.id}')"><img src="img/icon/share-2.png" class="theme-icon"></button>
           <div style="position:relative;">

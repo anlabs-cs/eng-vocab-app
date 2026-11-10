@@ -25,12 +25,10 @@ function render(){
 }
 
 function topNav(){
-  const showInstall = window.deferredPrompt ? 'inline-block' : 'none';
   return `
     <div class="topnav">
       <div class="brand" onclick="go('home')">EngVocab</div>
       <div class="spacer"></div>
-      <button id="installAppBtn" class="btn-ghost" style="display:${showInstall};" onclick="installPWA()">Install app</button>
       <div class="drive-box" id="driveBox">${typeof driveUiHtml === 'function' ? driveUiHtml() : ''}</div>
       <button class="icon-btn" title="${currentTheme()==='light'?'Switch to dark mode':'Switch to light mode'}" onclick="toggleTheme()">${currentTheme()==='light'?'<img src="img/icon/moon.png" class="theme-icon">':'<img src="img/icon/sun.png" class="theme-icon">'}</button>
     </div>
